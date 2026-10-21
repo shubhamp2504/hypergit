@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Git Surgery — Interactive Git Visualizer & Conflict Solver</title>
+  <meta name="description" content="A crystal-clear, beautifully modern interactive Git visualizer and conflict solver. Understand merges, rebases, and reflog in seconds.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+
+  <!-- App Header -->
+  <header class="navbar" id="navbar">
+    <div class="nav-left">
+      <div class="logo">
+        <div class="logo-gem">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="18" cy="18" r="3"></circle>
+            <circle cx="6" cy="6" r="3"></circle>
+            <path d="M6 9v12"></path>
+            <path d="M18 9a9 9 0 0 0-9 9"></path>
+          </svg>
+        </div>
+        <div class="logo-text">
+          <span class="logo-title">Git Surgery</span>
+          <span class="logo-tag">Visual Playground</span>
+        </div>
+      </div>
+
+      <!-- Quick Mission Picker -->
+      <nav class="mission-nav" aria-label="Scenarios">
+        <button class="mission-tab active" data-scenario="rebase-conflict" id="tabRebaseConflict">
+          <span class="tab-dot dot-warn"></span>
+          <span>1. Merge Conflict</span>
+        </button>
+        <button class="mission-tab" data-scenario="accidental-main" id="tabAccidentalMain">
+          <span class="tab-dot dot-danger"></span>
+          <span>2. Accidental Main Commit</span>
+        </button>
+        <button class="mission-tab" data-scenario="squash-pr" id="tabSquashPr">
+          <span class="tab-dot dot-purple"></span>
+          <span>3. Squash 4 Commits</span>
+        </button>
+        <button class="mission-tab" data-scenario="reflog-rescue" id="tabReflogRescue">
+          <span class="tab-dot dot-cyan"></span>
+          <span>4. Reflog Undo / Rescue</span>
+        </button>
+      </nav>
+    </div>
+
+    <div class="nav-right">
+      <button id="btnSoundToggle" class="icon-pill" title="Toggle audio feedback" aria-label="Toggle Sound">
+        <svg id="sfxIconOn" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+        </svg>
+        <svg id="sfxIconOff" class="hidden" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+          <line x1="23" y1="9" x2="17" y2="15"></line>
+          <line x1="17" y1="9" x2="23" y2="15"></line>
+        </svg>
+      </button>
+
+      <button id="btnOpenGuide" class="btn btn-ghost" title="How Git Works">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        How it Works
+      </button>
+
+      <button id="btnResetAll" class="btn btn-outline" title="Reset current scenario">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+        Reset Scenario
+      </button>
+    </div>
+  </header>
+
+  <!-- Situation Hero Banner (Explains in plain English what is happening) -->
+  <section class="situation-banner" id="situationBanner">
+    <div class="banner-badge" id="bannerBadge">
+      <span class="badge-icon">⚠️</span>
+      <span id="bannerBadgeText">Merge Conflict Detected</span>
+    </div>
+    <div class="banner-body">
+      <h2 id="bannerHeading">Two branches edited the exact same file (<code>src/auth.ts</code>) differently.</h2>
+      <p id="bannerSubheading">Git paused because it doesn't know which teammate's code is correct. Use the visual solver on the right or click below to resolve it.</p>
+    </div>
+    <div class="banner-actions">
+      <button id="btnPrimaryFix" class="btn btn-action">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        <span id="btnPrimaryFixText">Fix Conflict with Smart Merge</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- Main Split Layout -->
+  <main class="main-layout">
+    
+    <!-- Left: Modern Visual Git Swimlane Graph -->
+    <section class="graph-section">
+      <div class="graph-header">
+        <div class="graph-title-group">
+          <span class="section-label">VISUAL COMMIT GRAPH</span>
+          <span class="graph-hint">Click any commit to inspect. Watch branches diverge and reconnect.</span>
+        </div>
+        <div class="swimlane-legend">
+          <span class="legend-chip lane-main"><span class="chip-dot"></span> main</span>
+          <span class="legend-chip lane-feature"><span class="chip-dot"></span> feature/auth</span>
+          <span class="legend-chip lane-head"><span class="chip-dot"></span> HEAD (You are here)</span>
+        </div>
+      </div>
+
+      <!-- Swimlane Canvas Wrapper -->
+      <div class="swimlane-viewport" id="swimlaneViewport">
+        <!-- Visual Git Rail Track rendered by app.js -->
+        <div class="swimlane-tracks" id="swimlaneTracks">
+          <!-- Commit cards will be rendered dynamically with clean connecting rails -->
+        </div>
+      </div>
+
+      <!-- Quick Commit Injector -->
+      <div class="commit-bar">
+        <div class="commit-input-group">
+          <span class="commit-prefix">$ git commit -m</span>
+          <input type="text" id="inputCommitMsg" class="commit-text-input" placeholder="feat: your commit message..." value="feat(ui): add smooth glowing transitions">
+        </div>
+        <button id="btnAddCommit" class="btn btn-secondary">
+          + Add Commit
+        </button>
+        <button id="btnBranchOut" class="btn btn-outline">
+          🌿 Spawn Branch
+        </button>
+      </div>
+    </section>
+
+    <!-- Right: Interactive Surgery & 3-Way Conflict Solver -->
+    <aside class="solver-section" id="solverSection">
+      
+      <!-- Top Action Switcher: Conflict vs Rebase Tray vs Reflog -->
+      <div class="solver-card" id="conflictCard">
+        <div class="solver-card-header">
+          <div class="header-icon-title">
+            <div class="solver-status-dot pulse-amber" id="solverDot"></div>
+            <div>
+              <h3 class="solver-title" id="solverTitle">3-Way Conflict Resolver</h3>
+              <p class="solver-sub" id="solverSub">File: <code>src/auth.ts</code> (Lines 4-12)</p>
+            </div>
+          </div>
+          <span class="status-pill status-unresolved" id="statusPill">Needs Decision</span>
+        </div>
+
+        <!-- Before / Conflict Comparison Blocks -->
+        <div class="diff-split-container" id="diffContainer">
+          
+          <!-- Current Branch (Mine) -->
+          <div class="diff-panel panel-current">
+            <div class="panel-header">
+              <span class="branch-pill pill-feature">HEAD (Your Branch)</span>
+              <span class="author-tag">JWT Token Verification</span>
+            </div>
+            <pre class="code-preview"><code>export const validateSession = (token: string) => {
+  // Direct JWT cryptographic verify
+  return jwt.verify(token, process.env.JWT_SECRET);
+};</code></pre>
+            <button id="btnPickCurrent" class="btn-pick btn-pick-current">
+              👈 Keep Yours Only
+            </button>
+          </div>
+
+          <!-- Incoming Branch (Teammate / Main) -->
+          <div class="diff-panel panel-incoming">
+            <div class="panel-header">
+              <span class="branch-pill pill-main">main (Teammate's Branch)</span>
+              <span class="author-tag">Redis Cache Lookup</span>
+            </div>
+            <pre class="code-preview"><code>export const validateSession = async (token: string) => {
+  // Fast Redis key-value cache lookup
+  const session = await redis.get(`sess:${token}`);
+  return session ? JSON.parse(session) : null;
+};</code></pre>
+            <button id="btnPickIncoming" class="btn-pick btn-pick-incoming">
+              👉 Keep Theirs Only
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Smart Combined Option -->
+        <div class="smart-combine-box" id="smartCombineBox">
+          <div class="combine-text">
+            <strong>🤝 Best of Both Worlds (Smart Synthesis):</strong>
+            <span>Check Redis cache first for lightning speed, then fallback to JWT signature check.</span>
+          </div>
+          <button id="btnPickBoth" class="btn btn-combine">
+            Merge Both Cleanly
+          </button>
+        </div>
+
+        <!-- Resolved Preview (Appears after choosing) -->
+        <div class="resolved-result-box hidden" id="resolvedResultBox">
+          <div class="resolved-header">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#10b981" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <span class="resolved-title">Conflict Solved! Clean Merge Commit Generated</span>
+          </div>
+          <pre class="code-preview-clean"><code id="resolvedCodePreview"></code></pre>
+        </div>
+      </div>
+
+      <!-- Rebase Tray (Active when in Squash / Rebase Scenario) -->
+      <div class="solver-card hidden" id="rebaseCard">
+        <div class="solver-card-header">
+          <div class="header-icon-title">
+            <div class="solver-status-dot pulse-purple"></div>
+            <div>
+              <h3 class="solver-title">Interactive Squash Studio</h3>
+              <p class="solver-sub">Squash 4 messy WIP commits into 1 atomic PR commit</p>
+            </div>
+          </div>
+        </div>
+        <div class="rebase-stepper-list" id="rebaseStepperList">
+          <!-- Interactive commit checklist -->
+        </div>
+        <div class="rebase-actions-bar">
+          <button id="btnExecuteSquash" class="btn btn-action w-full">
+            ✨ Squash into Single Clean PR Commit
+          </button>
+        </div>
+      </div>
+
+      <!-- Safe Terminal Assistant (Explains each command like a human) -->
+      <div class="terminal-card">
+        <div class="terminal-card-top">
+          <div class="terminal-title-group">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+            <span class="term-heading">Safe Terminal Script</span>
+          </div>
+          <button id="btnCopyCommands" class="btn-copy-chip">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            Copy Commands
+          </button>
+        </div>
+
+        <div class="terminal-command-flow" id="terminalFlow">
+          <!-- Human-friendly step-by-step commands -->
+        </div>
+
+        <div class="terminal-card-bottom">
+          <div class="safe-indicator">
+            <span class="shield-icon">🛡️</span>
+            <span><strong>Zero Risk Mode:</strong> All steps keep your original commits in reflog so you can never lose code.</span>
+          </div>
+        </div>
+      </div>
+
+    </aside>
+
+  </main>
+
+  <!-- Modern How It Works Dialog -->
+  <dialog id="guideDialog" closedby="any" class="modern-dialog">
+    <div class="dialog-inner">
+      <div class="dialog-top">
+        <h2 class="dialog-heading">Git Demystified in 60 Seconds</h2>
+        <form method="dialog"><button class="dialog-close-btn" aria-label="Close">✕</button></form>
+      </div>
+      
+      <div class="dialog-steps">
+        <div class="step-card">
+          <span class="step-badge">1</span>
+          <h3>What is a Branch?</h3>
+          <p>A branch is simply a sticky label pointing to a commit snapshot. When you branch, you create an isolated playground that doesn't touch your main codebase.</p>
+        </div>
+
+        <div class="step-card">
+          <span class="step-badge">2</span>
+          <h3>Why do Conflicts Happen?</h3>
+          <p>When you and a teammate edit the exact same lines of code before merging, Git stops and asks: <em>"Which line is right?"</em> You just pick one or combine both!</p>
+        </div>
+
+        <div class="step-card">
+          <span class="step-badge">3</span>
+          <h3>What is Squashing?</h3>
+          <p>Taking 5 small "WIP", "fixed typo", "trying again" commits and rolling them into 1 clean, professional commit for your GitHub Pull Request.</p>
+        </div>
+
+        <div class="step-card">
+          <span class="step-badge">4</span>
+          <h3>The Git Reflog Safety Net</h3>
+          <p>Git never truly deletes commits immediately. Every single action is saved in the local <code>reflog</code>, so you can always time-travel backward.</p>
+        </div>
+      </div>
+
+      <div class="dialog-actions">
+        <form method="dialog">
+          <button class="btn btn-action">Got It, Let's Play!</button>
+        </form>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Notification Toast -->
+  <div id="toastBox" class="toast-box" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
