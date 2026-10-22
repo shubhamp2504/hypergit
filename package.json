@@ -1,20 +1,22 @@
 {
-  "name": "git-surgery",
+  "name": "hypergit",
   "version": "1.0.0",
-  "description": "Zero-Install Git Doctor, Rescue Suite, and AI Copilot for visual Git surgery directly in the browser.",
+  "description": "Next-generation spatial control plane, AI doctor, and visual command deck for Git.",
   "main": "index.html",
   "scripts": {
     "start": "python server.py",
     "dev": "python server.py"
   },
   "keywords": [
+    "hypergit",
     "git",
+    "git-control-plane",
     "git-doctor",
-    "git-surgery",
     "git-rescue",
     "git-gui",
-    "copilot",
-    "interactive-git"
+    "git-visualizer",
+    "conflict-resolver",
+    "copilot"
   ],
   "author": "",
   "license": "MIT"

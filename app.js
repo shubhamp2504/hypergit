@@ -1,6 +1,6 @@
 /**
- * Git Surgery — Real-Time Git Control & Visual Workbench
- * Advanced Features (Inspired by REA):
+ * HyperGit — Next-Generation Spatial Control Plane & Visual Command Deck
+ * Features:
  * - Git Doctor (Automated diagnostics & 1-click self-healing)
  * - Visual Diff Inspector (Interactive addition/deletion lines)
  * - Safety Checkpoints & Rollback
@@ -1878,9 +1878,9 @@ class RealGitApp {
     } catch (err) {
       this.explorerFoldersContainer.innerHTML = `
         <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 1.25rem; margin: 0.5rem 0;">
-          <div style="font-weight: 700; color: #f87171; margin-bottom: 6px; font-size: 0.92rem;">⚠️ Cannot connect to Git Surgery backend (127.0.0.1:4321)</div>
+          <div style="font-weight: 700; color: #f87171; margin-bottom: 6px; font-size: 0.92rem;">⚠️ Cannot connect to HyperGit local bridge (127.0.0.1:4321)</div>
           <div style="color: var(--text-secondary); font-size: 0.8rem; line-height: 1.6;">
-            The local Git backend daemon is not responding.<br>
+            The local HyperGit backend daemon is not responding.<br>
             • Please ensure <code style="background: #000; padding: 2px 6px; border-radius: 4px; color: var(--brand-cyan); font-family: var(--font-mono);">python server.py</code> is running.<br>
             • Or open directly via: <a href="http://localhost:4321" target="_blank" style="color: var(--brand-cyan); text-decoration: underline; font-weight: 700;">http://localhost:4321</a>
           </div>
