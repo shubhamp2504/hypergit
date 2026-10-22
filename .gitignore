@@ -1,0 +1,13 @@
+# User local projects
+.projects.json
+
+# Dependencies & build outputs
+node_modules/
+.vercel/
+dist/
+.env*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
