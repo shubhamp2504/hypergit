@@ -1,10 +1,14 @@
 /**
- * Git Surgery — Interactive Git Visualizer & Conflict Solver
- * Modern UI Engine & Visual Swimlane Controller
+ * Git Surgery — Real-Time Git Control & Visual Workbench
+ * Advanced Features (Inspired by REA):
+ * - Git Doctor (Automated diagnostics & 1-click self-healing)
+ * - Visual Diff Inspector (Interactive addition/deletion lines)
+ * - Safety Checkpoints & Rollback
+ * - Squash, Undo, Move Branch, Reflog Time Machine & CLI Engine
  */
 
 // ==========================================================================
-// 1. Audio Feedback Synthesizer (Web Audio API)
+// 1. Audio Feedback Synthesizer
 // ==========================================================================
 class SoundFX {
   constructor() {
@@ -36,9 +40,7 @@ class SoundFX {
       gain.connect(this.ctx.destination);
       osc.start();
       osc.stop(this.ctx.currentTime + duration);
-    } catch {
-      // Audio fails gracefully if user hasn't interacted with page
-    }
+    } catch {}
   }
 
   click() { this.play(550, 'sine', 0.04, 0.05); }
@@ -51,225 +53,1140 @@ class SoundFX {
     setTimeout(() => this.play(659.25, 'triangle', 0.1, 0.08), 80); // E5
     setTimeout(() => this.play(783.99, 'sine', 0.22, 0.1), 160); // G5
   }
+  error() { this.play(220, 'sawtooth', 0.2, 0.1); }
 }
 
 const sfx = new SoundFX();
 
 // ==========================================================================
-// 2. Scenario Data & Graph State
+// 1.5. Dynamic API Endpoint Bridge (Seamless file://, localhost & Vercel support)
 // ==========================================================================
-const SCENARIOS = {
-  'rebase-conflict': {
-    badge: '⚠️ Merge Conflict Detected',
-    badgeClass: 'dot-warn',
-    heading: 'Two branches edited the exact same file (src/auth.ts) differently.',
-    subheading: 'Git paused because it doesn\'t know which teammate\'s code is correct. Use the visual solver on the right or click below to resolve it.',
-    primaryFixText: 'Fix Conflict with Smart Merge',
-    lanes: [
-      {
-        name: 'main',
-        color: '#38bdf8',
-        commits: [
-          { hash: 'a1b2c3d', msg: 'Initial repo setup & core server', author: 'Alex', time: '2h ago' },
-          { hash: 'd4e5f6a', msg: 'feat(core): router & middleware baseline', author: 'Sam', time: '1h ago' },
-          { hash: '7b8c9d0', msg: 'feat(auth): Redis token session caching', author: 'Taylor', time: '35m ago' }
-        ]
-      },
-      {
-        name: 'feature/auth',
-        color: '#f472b6',
-        commits: [
-          { hash: 'e2f3a4b', msg: 'wip(auth): JWT token verification schema', author: 'You', time: '25m ago' },
-          { hash: '9c8d7e6', msg: 'feat(auth): JWT secret rotation validator', author: 'You', time: '10m ago', isHead: true }
-        ]
-      }
+const API_PORT = 4321;
+let API_BASE = '';
+if (window.location.protocol === 'file:') {
+  API_BASE = `http://127.0.0.1:${API_PORT}`;
+} else if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+  if (window.location.port && window.location.port !== String(API_PORT)) {
+    API_BASE = `http://127.0.0.1:${API_PORT}`;
+  }
+}
+
+// Automatically prefix all /api/ fetch calls when needed
+const _originalFetch = window.fetch;
+window.fetch = function(resource, init) {
+  if (typeof resource === 'string' && resource.startsWith('/api/')) {
+    resource = (API_BASE ? API_BASE : '') + resource;
+  }
+  return _originalFetch(resource, init);
+};
+
+// ==========================================================================
+// 1.8. Plain-English Action Explanations & Safety Catalog
+// ==========================================================================
+const ACTION_EXPLANATIONS = {
+  'btnRealCommit': {
+    name: 'Commit Working Tree Changes',
+    safety: 'safe',
+    badge: '🟢 100% Safe (Permanent Save)',
+    desc: 'Stages modified files and permanently records a new commit snapshot into your active branch history.',
+    cmd: 'git add . && git commit -m "..."'
+  },
+  'btnNewBranchPrompt': {
+    name: 'Create New Branch',
+    safety: 'safe',
+    badge: '🟢 100% Safe (Zero Code Lost)',
+    desc: 'Creates a new branch pointing to current HEAD and switches your workspace onto it.',
+    cmd: 'git checkout -b <branch-name>'
+  },
+  'btnStageAll': {
+    name: 'Stage All Modified Files',
+    safety: 'safe',
+    badge: '🟢 100% Safe',
+    desc: 'Prepares all changed and new untracked files for the next commit by adding them to the Git Index.',
+    cmd: 'git add -A'
+  },
+  'btnDiscardAllUnstaged': {
+    name: 'Discard All Unstaged Modifications',
+    safety: 'destructive',
+    badge: '🔴 Destructive (Permanent Deletion)',
+    desc: 'Wipes out all unstaged edits and uncommitted files, reverting them back to the last commit. Unsaved changes cannot be recovered.',
+    cmd: 'git checkout -- . && git clean -fd'
+  },
+  'btnUnstageAll': {
+    name: 'Unstage All Staged Files',
+    safety: 'safe',
+    badge: '🟢 100% Safe',
+    desc: 'Removes all files from the staging area without deleting any of your code modifications.',
+    cmd: 'git reset'
+  },
+  'btnCommitStagedOnly': {
+    name: 'Commit Staged Files Only',
+    safety: 'safe',
+    badge: '🟢 100% Safe (Selective Save)',
+    desc: 'Creates a commit containing only files currently in the Staged column. Unstaged changes remain untouched.',
+    cmd: 'git commit -m "..."'
+  },
+  'btnStageAllAndCommit': {
+    name: 'Stage All & Commit Atomically',
+    safety: 'safe',
+    badge: '🟢 100% Safe (All-in-One Save)',
+    desc: 'Stages every modified and new file in the repository and commits them together with your message in one click.',
+    cmd: 'git add -A && git commit -m "..."'
+  },
+  'btnQuickPull': {
+    name: 'Pull Remote Updates',
+    safety: 'safe',
+    badge: '🟢 Safe Remote Sync',
+    desc: 'Downloads commits from origin and fast-forwards your local branch to match remote work.',
+    cmd: 'git pull'
+  },
+  'btnQuickPush': {
+    name: 'Push Local Commits to Remote',
+    safety: 'safe',
+    badge: '🟢 Safe Branch Publication',
+    desc: 'Uploads your local commits to origin on the active branch so teammates can pull them.',
+    cmd: 'git push origin <branch>'
+  },
+  'btnQuickFetch': {
+    name: 'Fetch All Remotes',
+    safety: 'safe',
+    badge: '🟢 100% Safe (Read-Only)',
+    desc: 'Contacts remote servers and updates commit references without modifying any of your local working files.',
+    cmd: 'git fetch --all'
+  },
+  'btnQuickStash': {
+    name: 'Stash Working Tree Safely',
+    safety: 'safe',
+    badge: '🟢 100% Safe (Stored on Stash Stack)',
+    desc: 'Temporarily shelves your uncommitted changes into Git’s internal stash, giving you a squeaky-clean working tree.',
+    cmd: 'git stash push -m "..."'
+  },
+  'btnQuickStashPop': {
+    name: 'Pop Most Recent Stash',
+    safety: 'safe',
+    badge: '🟢 100% Safe (Restores Edits)',
+    desc: 'Re-applies the most recently stashed changes back into your files and removes them from the stash stack.',
+    cmd: 'git stash pop'
+  },
+  'btnRescueMainAccident': {
+    name: 'Committed to Main by Mistake',
+    safety: 'safe',
+    badge: '🟢 100% Safe Surgery',
+    desc: 'Transfers accidental commits from main to a new feature branch, and safely rolls main back to clean state.',
+    cmd: 'git branch <new> && git reset --hard HEAD~1 && git checkout <new>'
+  },
+  'btnRescueSoftUndo': {
+    name: 'Soft Undo Latest Commit',
+    safety: 'safe',
+    badge: '🟢 100% Safe (Zero Code Lost)',
+    desc: 'Erases the last commit record, placing 100% of your code modifications back into Staging so you can edit and re-commit.',
+    cmd: 'git reset --soft HEAD~1'
+  },
+  'btnRescueSquashWIP': {
+    name: 'Interactive Commit Squash',
+    safety: 'reversible',
+    badge: '🟡 Reversible History Rewrite',
+    desc: 'Combines multiple messy WIP commits into 1 clean atomic commit. Your code remains intact.',
+    cmd: 'git reset --soft HEAD~N && git commit -m "..."'
+  },
+  'btnRescueLostCommits': {
+    name: 'Reflog Time Machine',
+    safety: 'safe',
+    badge: '🟢 100% Safe (Time Travel)',
+    desc: 'Inspects Git’s secret history log to find and recover lost, deleted, or reset commits with 1 click.',
+    cmd: 'git reflog'
+  },
+  'btnToolDoctor': {
+    name: 'Git Doctor (Self-Healing)',
+    safety: 'safe',
+    badge: '🟢 Automated Health Scan',
+    desc: 'Scans for broken index.lock files, stuck rebases, corrupted merges, and detached HEADs with 1-click repairs.',
+    cmd: 'git status + .git repository checks'
+  },
+  'btnToolCheckpoint': {
+    name: 'Safety Checkpoint / Snapshot',
+    safety: 'safe',
+    badge: '🟢 Zero-Risk Rollback Anchor',
+    desc: 'Creates a safety tag marking this exact second. If any future Git command goes wrong, you can rewind back here.',
+    cmd: 'git tag checkpoint-<timestamp>'
+  },
+  'btnToolSquash': {
+    name: 'Squash Commits Tool',
+    safety: 'reversible',
+    badge: '🟡 Reversible History Rewrite',
+    desc: 'Opens the interactive squash slider to collapse small experimental commits into a clean pull request.',
+    cmd: 'git reset --soft HEAD~N && git commit'
+  },
+  'btnToolUndo': {
+    name: 'Undo Commit Tool',
+    safety: 'safe',
+    badge: '🟢 100% Safe Undo',
+    desc: 'Opens options for Soft or Mixed undo of the latest commit on this branch.',
+    cmd: 'git reset --soft HEAD~1'
+  },
+  'btnToolMoveBranch': {
+    name: 'Move Commits to Branch Tool',
+    safety: 'safe',
+    badge: '🟢 100% Safe Surgery',
+    desc: 'Safely branches off commits made on main/master and rewinds production branch.',
+    cmd: 'git branch <branch> && git reset --hard HEAD~1'
+  },
+  'btnToolReflog': {
+    name: 'Reflog Time Machine Tool',
+    safety: 'safe',
+    badge: '🟢 100% Safe (Read-Only Log)',
+    desc: 'Displays the list of all recent HEAD changes so you can restore any previous commit snapshot.',
+    cmd: 'git reflog'
+  },
+  'btnRefreshRepo': {
+    name: 'Synchronize Repository State',
+    safety: 'safe',
+    badge: '🟢 Live Disk Read',
+    desc: 'Reloads Git status, modified files, DAG commits, and stashes directly from disk.',
+    cmd: 'git status && git log'
+  },
+  'btnAnalyzeIntent': {
+    name: 'Analyze Intent & Recommend Action',
+    safety: 'safe',
+    badge: '🟢 AI Git Copilot',
+    desc: 'Evaluates your natural language goal against the live repository state and recommends the safest action.',
+    cmd: 'Analyzes branch, staging, conflicts, and locks'
+  },
+  'btnExecuteRecommendedAction': {
+    name: 'Execute Recommended Action',
+    safety: 'dynamic',
+    badge: '⚡ 1-Click Execution',
+    desc: 'Runs the recommended Git procedure directly on your repository with live console output.',
+    cmd: 'Executes the prescribed Git commands'
+  },
+  'btnWbDiffStageFile': {
+    name: 'Stage Inspected File',
+    safety: 'safe',
+    badge: '🟢 100% Safe',
+    desc: 'Stages only the file currently displayed in the full-width diff viewer into your Git index.',
+    cmd: 'git add <inspected-file>'
+  },
+  'btnWbDiffDiscardFile': {
+    name: 'Discard Inspected File Edits',
+    safety: 'destructive',
+    badge: '🔴 Destructive (Permanent Deletion)',
+    desc: 'Reverts all uncommitted changes in this file back to HEAD. Unsaved edits in this file cannot be recovered.',
+    cmd: 'git checkout -- <inspected-file>'
+  },
+  'btnRealPickCurrent': {
+    name: 'Keep Your Version (HEAD)',
+    safety: 'safe',
+    badge: '🟢 Safe Conflict Resolution',
+    desc: 'Resolves conflict collision by keeping your version and discarding the incoming block.',
+    cmd: 'git add <resolved-file>'
+  },
+  'btnRealPickIncoming': {
+    name: 'Keep Incoming Version',
+    safety: 'safe',
+    badge: '🟢 Safe Conflict Resolution',
+    desc: 'Resolves conflict collision by keeping the incoming version and discarding your version.',
+    cmd: 'git add <resolved-file>'
+  },
+  'btnRealPickBoth': {
+    name: 'Merge Both Versions',
+    safety: 'safe',
+    badge: '🟢 Safe Conflict Resolution',
+    desc: 'Appends incoming changes after your changes without conflict markers and marks the file resolved.',
+    cmd: 'git add <resolved-file>'
+  },
+  'btnCreateStashNow': {
+    name: 'Create Named Stash',
+    safety: 'safe',
+    badge: '🟢 100% Safe',
+    desc: 'Stashes all current uncommitted work with a custom message so you can restore it later.',
+    cmd: 'git stash push -m "..."'
+  },
+  'btnCreateNewBranchToolbar': {
+    name: 'Create New Branch from Toolbar',
+    safety: 'safe',
+    badge: '🟢 100% Safe',
+    desc: 'Creates and checks out a new branch from current HEAD.',
+    cmd: 'git checkout -b <name>'
+  },
+  'btnClearTerminal': {
+    name: 'Clear Terminal Console',
+    safety: 'safe',
+    badge: '🟢 UI Only',
+    desc: 'Clears the log text in the bottom terminal window. Does not affect any files or commits on disk.',
+    cmd: 'Console clear'
+  },
+  'btnCopyTerminal': {
+    name: 'Copy Terminal Output',
+    safety: 'safe',
+    badge: '🟢 UI Only',
+    desc: 'Copies all command outputs and log history from the terminal window to your clipboard.',
+    cmd: 'Clipboard copy'
+  }
+};
+
+// ==========================================================================
+// 1.9. Interactive Pre-Configured Scenarios (For Zero-Install Vercel Web Edition)
+// ==========================================================================
+const DEMO_SCENARIOS = {
+  'demo-accident-main': {
+    name: '🌿 Scenario: Committed to Main by Mistake',
+    path: 'demo-accident-main',
+    isDemo: true,
+    status: {
+      branch: 'master',
+      isClean: false,
+      stagedCount: 1,
+      unstagedCount: 2,
+      untrackedCount: 1,
+      stagedFiles: ['src/payment/gateway.js'],
+      unstagedFiles: ['src/api/routes.js', 'package.json'],
+      untrackedFiles: ['debug_trace.log'],
+      conflictedFiles: [],
+      ahead: 1,
+      behind: 0
+    },
+    commits: [
+      { id: 'c101', hash: 'a4b89f1', author: 'Alex Dev', time: '10 minutes ago', msg: 'fix: hotfix payment discount calculations (committed to master by mistake!)', parents: ['c100'] },
+      { id: 'c100', hash: '8e1c23a', author: 'Team Lead', time: '2 days ago', msg: 'feat: release v1.4.0 stable', parents: ['c099'] },
+      { id: 'c099', hash: '2d4e56b', author: 'Sarah C.', time: '5 days ago', msg: 'chore: configure automated test suite', parents: [] }
+    ],
+    doctor: {
+      score: 80,
+      checks: [
+        { id: 'branch-policy', status: 'warn', title: 'Branch Policy Warning', desc: 'Active branch is production (master) with 1 unpushed commit.', repairAction: 'move_to_new_branch', repairLabel: 'Move to Feature Branch' }
+      ]
+    }
+  },
+  'demo-conflict': {
+    name: '⚔️ Scenario: 3-Way Merge Conflict',
+    path: 'demo-conflict',
+    isDemo: true,
+    status: {
+      branch: 'feature/auth-refresh',
+      isClean: false,
+      stagedCount: 0,
+      unstagedCount: 0,
+      untrackedCount: 0,
+      stagedFiles: [],
+      unstagedFiles: [],
+      untrackedFiles: [],
+      conflictedFiles: ['src/auth/jwt_service.js'],
+      ahead: 2,
+      behind: 1
+    },
+    commits: [
+      { id: 'c202', hash: 'f3a9012', author: 'Alex Dev', time: '1 hour ago', msg: 'feat: add RSA256 signature verification', parents: ['c200'] },
+      { id: 'c201', hash: 'e9b1103', author: 'Colleague', time: '2 hours ago', msg: 'fix: update token expiration to 24h', parents: ['c200'] }
     ],
     conflict: {
-      file: 'src/auth.ts',
-      status: 'unresolved',
-      currentCode: `export const validateSession = (token: string) => {\n  // Direct JWT cryptographic verify\n  return jwt.verify(token, process.env.JWT_SECRET);\n};`,
-      incomingCode: `export const validateSession = async (token: string) => {\n  // Fast Redis key-value cache lookup\n  const session = await redis.get(\`sess:\${token}\`);\n  return session ? JSON.parse(session) : null;\n};`,
-      bothCode: `export const validateSession = async (token: string) => {\n  // 1. Check ultra-fast Redis cache first\n  const cached = await redis.get(\`sess:\${token}\`);\n  if (cached) return JSON.parse(cached);\n  // 2. Fallback to cryptographic JWT verify\n  return jwt.verify(token, process.env.JWT_SECRET);\n};`
+      filePath: 'src/auth/jwt_service.js',
+      currentCode: "const token = await generateJWT(user, { algorithm: 'RS256', expiresIn: '1h' });\nconsole.log('Token created securely for user:', user.id);",
+      incomingCode: "const token = await createSecureSession(user, req.ip, { sessionTimeout: 86400 });\nawait auditLog.recordAuthEvent(user.id, 'session_start');"
+    }
+  },
+  'demo-locked': {
+    name: '🔒 Scenario: Corrupted .git/index.lock',
+    path: 'demo-locked',
+    isDemo: true,
+    status: {
+      branch: 'feature/checkout',
+      isClean: false,
+      stagedCount: 0,
+      unstagedCount: 3,
+      untrackedCount: 0,
+      stagedFiles: [],
+      unstagedFiles: ['src/checkout/cart.js', 'src/checkout/taxes.js', 'styles/cart.css'],
+      untrackedFiles: [],
+      conflictedFiles: [],
+      ahead: 0,
+      behind: 0
     },
-    commands: [
-      { step: 1, cmd: 'git checkout feature/auth', note: 'Ensure you are on your working feature branch.' },
-      { step: 2, cmd: 'git merge main', note: 'Git attempts to merge and stops at line 4 in src/auth.ts.' },
-      { step: 3, cmd: 'git add src/auth.ts', note: 'Marks the conflict as resolved after you pick the code.' },
-      { step: 4, cmd: 'git commit -m "Merge branch \'main\' (combined JWT + Redis)"', note: 'Creates clean merge commit!' }
-    ]
+    commits: [
+      { id: 'c301', hash: '12ef45a', author: 'Alex Dev', time: '30 mins ago', msg: 'feat: dynamic tax calculator based on zip code', parents: [] }
+    ],
+    doctor: {
+      score: 40,
+      checks: [
+        { id: 'index-lock', status: 'error', title: 'Stuck Git Lock File', desc: 'Found abandoned .git/index.lock. All Git commands are currently frozen.', repairAction: 'remove_lock', repairLabel: 'Remove Lock File' }
+      ]
+    }
   },
-
-  'accidental-main': {
-    badge: '🚨 Accidental Commit on Main',
-    badgeClass: 'dot-danger',
-    heading: 'You accidentally made an experimental commit directly on main instead of a feature branch.',
-    subheading: 'No panic needed! You can effortlessly move that commit to a new branch and rewind main cleanly in seconds.',
-    primaryFixText: 'Move Commit to Feature Branch',
-    lanes: [
-      {
-        name: 'main',
-        color: '#38bdf8',
-        commits: [
-          { hash: '1111111', msg: 'v1.0.0 Stable production release', author: 'DevLead', time: '3h ago' },
-          { hash: '2222222', msg: 'chore: bump dependencies to latest', author: 'Bot', time: '2h ago' },
-          { hash: '3333333', msg: '🔥 ACCIDENTAL: experimental web-socket streaming on main', author: 'You', time: '5m ago', isHead: true }
-        ]
-      }
-    ],
-    conflict: null,
-    commands: [
-      { step: 1, cmd: 'git branch feature/websocket-streaming', note: 'Saves your new commit safely onto a new branch name.' },
-      { step: 2, cmd: 'git reset --hard HEAD~1', note: 'Rewinds local main back 1 commit to match origin/main.' },
-      { step: 3, cmd: 'git checkout feature/websocket-streaming', note: 'Switches you over to continue work safely.' }
-    ]
-  },
-
-  'squash-pr': {
-    badge: '📦 4 Messy Commits Ready for PR',
-    badgeClass: 'dot-purple',
-    heading: 'Your branch has 4 WIP / typo commits. Clean them up into 1 atomic commit before opening your PR.',
-    subheading: 'Squashing combines all intermediate steps into one single clean commit so your team\'s git history stays pristine.',
-    primaryFixText: 'Squash 4 Commits into 1',
-    lanes: [
-      {
-        name: 'main',
-        color: '#38bdf8',
-        commits: [
-          { hash: 'a000001', msg: 'chore: baseline production setup', author: 'Team', time: '4h ago' }
-        ]
-      },
-      {
-        name: 'feature/payment',
-        color: '#a855f7',
-        commits: [
-          { hash: 'b000002', msg: 'WIP payment integration', author: 'You', time: '2h ago' },
-          { hash: 'b000003', msg: 'fix typo in stripe secret key', author: 'You', time: '1h ago' },
-          { hash: 'b000004', msg: 'oops remove leftover console.log', author: 'You', time: '30m ago' },
-          { hash: 'b000005', msg: 'it works now final webhook test', author: 'You', time: '5m ago', isHead: true }
-        ]
-      }
-    ],
-    conflict: null,
-    squashItems: [
-      { hash: 'b000002', action: 'pick', msg: 'WIP payment integration' },
-      { hash: 'b000003', action: 'squash', msg: 'fix typo in stripe secret key' },
-      { hash: 'b000004', action: 'squash', msg: 'oops remove leftover console.log' },
-      { hash: 'b000005', action: 'squash', msg: 'it works now final webhook test' }
-    ],
-    commands: [
-      { step: 1, cmd: 'git checkout feature/payment', note: 'Switch to feature branch.' },
-      { step: 2, cmd: 'git reset --soft main', note: 'Rewinds commit history to main but keeps all your code changes in staging.' },
-      { step: 3, cmd: 'git commit -m "feat(payment): integrate Stripe checkout with webhooks"', note: 'Creates one single clean atomic commit!' }
-    ]
-  },
-
-  'reflog-rescue': {
-    badge: '⏳ Reflog Time Travel',
-    badgeClass: 'dot-cyan',
-    heading: 'A dangerous `git reset --hard` wiped an unpushed commit from your branch!',
-    subheading: 'Don\'t worry: Git never immediately deletes anything. The reflog keeps a record of every HEAD movement.',
-    primaryFixText: 'Rescue Lost Commit from Reflog',
-    lanes: [
-      {
-        name: 'main (after accidental reset)',
-        color: '#38bdf8',
-        commits: [
-          { hash: '7770001', msg: 'Stable commit before dangerous reset', author: 'You', time: '1h ago', isHead: true }
-        ]
-      },
-      {
-        name: 'orphaned (in reflog memory)',
-        color: '#64748b',
-        commits: [
-          { hash: '7770002', msg: '⚠️ Crucial lost work: cryptographic key generator', author: 'You', time: '20m ago' }
-        ]
-      }
-    ],
-    conflict: null,
-    commands: [
-      { step: 1, cmd: 'git reflog', note: 'Displays history: HEAD@{1} was commit 7770002 before reset.' },
-      { step: 2, cmd: 'git branch rescue-branch 7770002', note: 'Creates a new branch pointing directly to the lost commit.' },
-      { step: 3, cmd: 'git checkout rescue-branch', note: 'All lost code is instantly recovered!' }
+  'demo-squash': {
+    name: '📦 Scenario: 4 Messy WIP Commits to Squash',
+    path: 'demo-squash',
+    isDemo: true,
+    status: {
+      branch: 'feature/user-profile',
+      isClean: true,
+      stagedCount: 0,
+      unstagedCount: 0,
+      untrackedCount: 0,
+      stagedFiles: [],
+      unstagedFiles: [],
+      untrackedFiles: [],
+      conflictedFiles: [],
+      ahead: 4,
+      behind: 0
+    },
+    commits: [
+      { id: 's4', hash: '99a1bc4', author: 'Alex Dev', time: '5 mins ago', msg: 'fix typo in avatar upload', parents: ['s3'] },
+      { id: 's3', hash: '88f2ad3', author: 'Alex Dev', time: '15 mins ago', msg: 'wip testing again', parents: ['s2'] },
+      { id: 's2', hash: '77c3be2', author: 'Alex Dev', time: '40 mins ago', msg: 'temp save profile styles', parents: ['s1'] },
+      { id: 's1', hash: '66d4cf1', author: 'Alex Dev', time: '1 hour ago', msg: 'feat: add user profile page component', parents: [] }
     ]
   }
 };
 
 // ==========================================================================
-// 3. UI App Controller
+// 2. Real Git App Controller
 // ==========================================================================
-class GitSurgeryApp {
+class RealGitApp {
   constructor() {
-    this.currentScenarioKey = 'rebase-conflict';
-    this.scenarioData = null;
-    this.selectedCommit = null;
+    this.projects = [];
+    this.activeRepo = null;
+    this.currentStatus = null;
+    this.cmdHistory = [];
+    this.historyIndex = -1;
+    this.currentDiffData = null;
+    this.currentDiffTarget = null;
+    this.diffMode = 'unified';
+    this.activeConflictData = null;
 
     this.initDOMElements();
     this.bindEvents();
-    this.loadScenario('rebase-conflict');
+    this.loadProjects();
   }
 
   initDOMElements() {
-    // Top Nav
-    this.missionTabs = document.querySelectorAll('.mission-tab');
-    this.btnSoundToggle = document.getElementById('btnSoundToggle');
-    this.sfxIconOn = document.getElementById('sfxIconOn');
-    this.sfxIconOff = document.getElementById('sfxIconOff');
-    this.btnOpenGuide = document.getElementById('btnOpenGuide');
-    this.btnResetAll = document.getElementById('btnResetAll');
-    this.guideDialog = document.getElementById('guideDialog');
+    // Top Bar & Folder Browsing
+    this.projectSelect = document.getElementById('projectSelect');
+    this.btnBrowseFolder = document.getElementById('btnBrowseFolder');
+    this.btnAddPathModal = document.getElementById('btnAddPathModal');
+    this.btnRefreshRepo = document.getElementById('btnRefreshRepo');
+    this.currentBranchName = document.getElementById('currentBranchName');
+    this.syncStatusTag = document.getElementById('syncStatusTag');
 
-    // Hero Banner
-    this.situationBanner = document.getElementById('situationBanner');
-    this.bannerBadge = document.getElementById('bannerBadge');
-    this.bannerBadgeText = document.getElementById('bannerBadgeText');
+    // In-App Explorer Modal
+    this.modalOpenPath = document.getElementById('modalOpenPath');
+    this.btnModalBrowseTrigger = document.getElementById('btnModalBrowseTrigger');
+    this.customRepoPathInput = document.getElementById('customRepoPathInput');
+    this.btnConfirmOpenPath = document.getElementById('btnConfirmOpenPath');
+    this.explorerDrivesBar = document.getElementById('explorerDrivesBar');
+    this.explorerBreadcrumbBar = document.getElementById('explorerBreadcrumbBar');
+    this.explorerFilterInput = document.getElementById('explorerFilterInput');
+    this.explorerFoldersContainer = document.getElementById('explorerFoldersContainer');
+    this.btnSelectCurrentExploredRepo = document.getElementById('btnSelectCurrentExploredRepo');
+
+    // Workbench Tabs & Views
+    this.tabBtns = document.querySelectorAll('.wb-tab');
+    this.viewSwimlane = document.getElementById('viewSwimlane');
+    this.viewStaging = document.getElementById('viewStaging');
+    this.viewDiff = document.getElementById('viewDiff');
+    this.viewBranches = document.getElementById('viewBranches');
+    this.viewStashes = document.getElementById('viewStashes');
+
+    this.stagingTabBadge = document.getElementById('stagingTabBadge');
+    this.diffTabBadge = document.getElementById('diffTabBadge');
+    this.branchesTabBadge = document.getElementById('branchesTabBadge');
+    this.stashesTabBadge = document.getElementById('stashesTabBadge');
+
+    // Full-Width Workbench Diff Elements
+    this.wbDiffTitle = document.getElementById('wbDiffTitle');
+    this.wbDiffSub = document.getElementById('wbDiffSub');
+    this.wbDiffStatAdd = document.getElementById('wbDiffStatAdd');
+    this.wbDiffStatDel = document.getElementById('wbDiffStatDel');
+    this.btnWbDiffModeUnified = document.getElementById('btnWbDiffModeUnified');
+    this.btnWbDiffModeSplit = document.getElementById('btnWbDiffModeSplit');
+    this.btnWbDiffStageFile = document.getElementById('btnWbDiffStageFile');
+    this.btnWbDiffDiscardFile = document.getElementById('btnWbDiffDiscardFile');
+    this.btnWbDiffCopy = document.getElementById('btnWbDiffCopy');
+    this.btnWbDiffPopout = document.getElementById('btnWbDiffPopout');
+    this.wbDiffEmpty = document.getElementById('wbDiffEmpty');
+    this.wbDiffCodeBox = document.getElementById('wbDiffCodeBox');
+
+    // Staging Elements
+    this.unstagedCountLabel = document.getElementById('unstagedCountLabel');
+    this.stagedCountLabel = document.getElementById('stagedCountLabel');
+    this.unstagedFileList = document.getElementById('unstagedFileList');
+    this.stagedFileList = document.getElementById('stagedFileList');
+    this.btnStageAll = document.getElementById('btnStageAll');
+    this.btnUnstageAll = document.getElementById('btnUnstageAll');
+    this.composerCommitMsg = document.getElementById('composerCommitMsg');
+    this.checkAmendCommit = document.getElementById('checkAmendCommit');
+    this.btnCommitStagedOnly = document.getElementById('btnCommitStagedOnly');
+    this.btnStageAllAndCommit = document.getElementById('btnStageAllAndCommit');
+
+    // Branches View Elements
+    this.branchFilterInput = document.getElementById('branchFilterInput');
+    this.btnCreateNewBranchToolbar = document.getElementById('btnCreateNewBranchToolbar');
+    this.branchesListContainer = document.getElementById('branchesListContainer');
+
+    // Stashes View Elements
+    this.stashMessageInput = document.getElementById('stashMessageInput');
+    this.btnCreateStashNow = document.getElementById('btnCreateStashNow');
+    this.stashesListContainer = document.getElementById('stashesListContainer');
+
+    // Surgical Tool Buttons
+    this.btnToolDoctor = document.getElementById('btnToolDoctor');
+    this.btnToolCheckpoint = document.getElementById('btnToolCheckpoint');
+    this.btnToolSquash = document.getElementById('btnToolSquash');
+    this.btnToolUndo = document.getElementById('btnToolUndo');
+    this.btnToolMoveBranch = document.getElementById('btnToolMoveBranch');
+    this.btnToolReflog = document.getElementById('btnToolReflog');
+
+    // Banner
+    this.bannerRepoName = document.getElementById('bannerRepoName');
     this.bannerHeading = document.getElementById('bannerHeading');
     this.bannerSubheading = document.getElementById('bannerSubheading');
-    this.btnPrimaryFix = document.getElementById('btnPrimaryFix');
-    this.btnPrimaryFixText = document.getElementById('btnPrimaryFixText');
+    // Remote Sync Bar
+    this.btnQuickPull = document.getElementById('btnQuickPull');
+    this.btnQuickPush = document.getElementById('btnQuickPush');
+    this.btnQuickFetch = document.getElementById('btnQuickFetch');
+    this.btnQuickStash = document.getElementById('btnQuickStash');
+    this.btnQuickStashPop = document.getElementById('btnQuickStashPop');
 
-    // Swimlane Tracks
+    // DAG Filter & Discard
+    this.commitSearchInput = document.getElementById('commitSearchInput');
+    this.btnDiscardAllUnstaged = document.getElementById('btnDiscardAllUnstaged');
+
+    // Quick Rescue Suite
+    this.btnRescueMainAccident = document.getElementById('btnRescueMainAccident');
+    this.btnRescueSoftUndo = document.getElementById('btnRescueSoftUndo');
+    this.btnRescueSquashWIP = document.getElementById('btnRescueSquashWIP');
+    this.btnRescueLostCommits = document.getElementById('btnRescueLostCommits');
+
+    // Swimlane
     this.swimlaneTracks = document.getElementById('swimlaneTracks');
+    this.graphStatsHint = document.getElementById('graphStatsHint');
 
-    // Conflict Resolver Card
-    this.conflictCard = document.getElementById('conflictCard');
-    this.diffContainer = document.getElementById('diffContainer');
-    this.smartCombineBox = document.getElementById('smartCombineBox');
-    this.resolvedResultBox = document.getElementById('resolvedResultBox');
-    this.resolvedCodePreview = document.getElementById('resolvedCodePreview');
-    this.statusPill = document.getElementById('statusPill');
-    this.btnPickCurrent = document.getElementById('btnPickCurrent');
-    this.btnPickIncoming = document.getElementById('btnPickIncoming');
-    this.btnPickBoth = document.getElementById('btnPickBoth');
-
-    // Rebase Card
-    this.rebaseCard = document.getElementById('rebaseCard');
-    this.rebaseStepperList = document.getElementById('rebaseStepperList');
-    this.btnExecuteSquash = document.getElementById('btnExecuteSquash');
-
-    // Terminal Assistant
-    this.terminalFlow = document.getElementById('terminalFlow');
-    this.btnCopyCommands = document.getElementById('btnCopyCommands');
-
-    // Quick Bar
+    // Quick Commit Bar
     this.inputCommitMsg = document.getElementById('inputCommitMsg');
-    this.btnAddCommit = document.getElementById('btnAddCommit');
-    this.btnBranchOut = document.getElementById('btnBranchOut');
+    this.btnRealCommit = document.getElementById('btnRealCommit');
+    this.btnNewBranchPrompt = document.getElementById('btnNewBranchPrompt');
 
-    // Toast Container
+    // Terminal
+    this.terminalOutput = document.getElementById('terminalOutput');
+    this.terminalForm = document.getElementById('terminalForm');
+    this.terminalCmdInput = document.getElementById('terminalCmdInput');
+    this.btnClearTerminal = document.getElementById('btnClearTerminal');
+    this.btnCopyTerminal = document.getElementById('btnCopyTerminal');
+
+    // Conflict Card
+    this.conflictCard = document.getElementById('conflictCard');
+    this.conflictFileName = document.getElementById('conflictFileName');
+    this.codeCurrent = document.getElementById('codeCurrent');
+    this.codeIncoming = document.getElementById('codeIncoming');
+    this.btnRealPickCurrent = document.getElementById('btnRealPickCurrent');
+    this.btnRealPickIncoming = document.getElementById('btnRealPickIncoming');
+    this.btnRealPickBoth = document.getElementById('btnRealPickBoth');
+    this.btnExpandConflictFullWidth = document.getElementById('btnExpandConflictFullWidth');
+
+    // Modals
+    this.modalDoctor = document.getElementById('modalDoctor');
+    this.doctorScoreBadge = document.getElementById('doctorScoreBadge');
+    this.doctorChecksList = document.getElementById('doctorChecksList');
+    this.btnRerunDoctor = document.getElementById('btnRerunDoctor');
+
+    this.modalCheckpoint = document.getElementById('modalCheckpoint');
+    this.checkpointNameInput = document.getElementById('checkpointNameInput');
+    this.btnCreateCheckpoint = document.getElementById('btnCreateCheckpoint');
+    this.checkpointsListContainer = document.getElementById('checkpointsListContainer');
+
+    this.modalDiff = document.getElementById('modalDiff');
+    this.diffModalTitle = document.getElementById('diffModalTitle');
+    this.diffModalSub = document.getElementById('diffModalSub');
+    this.modalDiffStatAdd = document.getElementById('modalDiffStatAdd');
+    this.modalDiffStatDel = document.getElementById('modalDiffStatDel');
+    this.btnModalDiffUnified = document.getElementById('btnModalDiffUnified');
+    this.btnModalDiffSplit = document.getElementById('btnModalDiffSplit');
+    this.btnModalDiffCopy = document.getElementById('btnModalDiffCopy');
+    this.btnModalDiffToggleMaximize = document.getElementById('btnModalDiffToggleMaximize');
+    this.diffViewerCodeBox = document.getElementById('diffViewerCodeBox');
+
+    // Full-Width Conflict Modal
+    this.modalConflictFullWidth = document.getElementById('modalConflictFullWidth');
+    this.fwConflictFileName = document.getElementById('fwConflictFileName');
+    this.fwCodeCurrent = document.getElementById('fwCodeCurrent');
+    this.fwCodeIncoming = document.getElementById('fwCodeIncoming');
+    this.btnFwPickCurrent = document.getElementById('btnFwPickCurrent');
+    this.btnFwPickIncoming = document.getElementById('btnFwPickIncoming');
+    this.btnFwPickBoth = document.getElementById('btnFwPickBoth');
+
+    this.modalSquash = document.getElementById('modalSquash');
+    this.squashCountSlider = document.getElementById('squashCountSlider');
+    this.squashCountLabel = document.getElementById('squashCountLabel');
+    this.squashCmdCount = document.getElementById('squashCmdCount');
+    this.squashMsgInput = document.getElementById('squashMsgInput');
+    this.btnExecuteRealSquash = document.getElementById('btnExecuteRealSquash');
+
+    this.modalUndo = document.getElementById('modalUndo');
+    this.btnExecuteRealUndo = document.getElementById('btnExecuteRealUndo');
+
+    this.modalMoveBranch = document.getElementById('modalMoveBranch');
+    this.moveBranchNameInput = document.getElementById('moveBranchNameInput');
+    this.btnExecuteMoveBranch = document.getElementById('btnExecuteMoveBranch');
+
+    this.modalReflog = document.getElementById('modalReflog');
+    this.reflogList = document.getElementById('reflogList');
+
+    this.guideDialog = document.getElementById('guideDialog');
+    this.btnOpenGuide = document.getElementById('btnOpenGuide');
+    this.btnSoundToggle = document.getElementById('btnSoundToggle');
+    this.sfxIconOn = document.getElementById('sfxIconOn');
     this.toastBox = document.getElementById('toastBox');
+
+    // Smart Git Intent Copilot Elements
+    this.copilotCard = document.getElementById('copilotCard');
+    this.copilotQueryInput = document.getElementById('copilotQueryInput');
+    this.btnAnalyzeIntent = document.getElementById('btnAnalyzeIntent');
+    this.btnClearCopilotInput = document.getElementById('btnClearCopilotInput');
+    this.copilotPresetChips = document.getElementById('copilotPresetChips');
+    this.btnQuickRepoDiagnose = document.getElementById('btnQuickRepoDiagnose');
+    this.copilotRecommendationBox = document.getElementById('copilotRecommendationBox');
+    this.copilotDiagnosisText = document.getElementById('copilotDiagnosisText');
+    this.copilotSafetyBadge = document.getElementById('copilotSafetyBadge');
+    this.copilotActionTitle = document.getElementById('copilotActionTitle');
+    this.copilotActionSummary = document.getElementById('copilotActionSummary');
+    this.copilotWhatHappensList = document.getElementById('copilotWhatHappensList');
+    this.copilotCmdPreview = document.getElementById('copilotCmdPreview');
+    this.btnExecuteRecommendedAction = document.getElementById('btnExecuteRecommendedAction');
+    this.copilotExecBtnText = document.getElementById('copilotExecBtnText');
+    this.copilotAlternativesGroup = document.getElementById('copilotAlternativesGroup');
+    this.currentRecommendation = null;
+
+    // Action Impact Inspector Elements
+    this.actionInspectorBar = document.getElementById('actionInspectorBar');
+    this.inspectorIcon = document.getElementById('inspectorIcon');
+    this.inspectorActionName = document.getElementById('inspectorActionName');
+    this.inspectorSafetyBadge = document.getElementById('inspectorSafetyBadge');
+    this.inspectorDesc = document.getElementById('inspectorDesc');
+    this.inspectorCmdBox = document.getElementById('inspectorCmdBox');
+    this.inspectorCmdCode = document.getElementById('inspectorCmdCode');
+    this.inspectorIdleTimer = null;
   }
 
   bindEvents() {
-    // Mission Tabs
-    this.missionTabs.forEach(tab => {
-      tab.addEventListener('click', () => {
+    // Project Selection
+    this.projectSelect.addEventListener('change', (e) => {
+      const val = e.target.value;
+      if (val === '__browse__') {
+        this.projectSelect.value = this.activeRepo ? this.activeRepo.path : '';
+        this.browseFolderDialog();
+        return;
+      }
+      if (val === '__manual__') {
+        this.projectSelect.value = this.activeRepo ? this.activeRepo.path : '';
+        this.browseFolderDialog();
+        return;
+      }
+      sfx.click();
+      const selected = this.projects.find(p => p.path === val);
+      if (selected) {
+        this.activeRepo = selected;
+        this.refreshActiveRepo();
+      }
+    });
+
+    if (this.btnBrowseFolder) {
+      this.btnBrowseFolder.addEventListener('click', () => this.browseFolderDialog());
+    }
+
+    if (this.btnAddPathModal) {
+      this.btnAddPathModal.addEventListener('click', () => this.browseFolderDialog());
+    }
+
+    if (this.btnModalBrowseTrigger) {
+      this.btnModalBrowseTrigger.addEventListener('click', () => {
+        this.launchOsFolderDialog();
+      });
+    }
+
+    if (this.btnConfirmOpenPath) {
+      this.btnConfirmOpenPath.addEventListener('click', () => {
+        this.openCustomPath(this.customRepoPathInput.value);
+      });
+    }
+
+    if (this.customRepoPathInput) {
+      this.customRepoPathInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          this.openCustomPath(this.customRepoPathInput.value);
+        }
+      });
+    }
+
+    // Workbench Tab Switching
+    this.tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
         sfx.click();
-        const scenario = tab.dataset.scenario;
-        this.loadScenario(scenario);
+        const tab = btn.dataset.tab;
+        this.tabBtns.forEach(b => b.classList.toggle('active', b === btn));
+        if (this.viewSwimlane) this.viewSwimlane.classList.toggle('hidden', tab !== 'swimlane');
+        if (this.viewStaging) this.viewStaging.classList.toggle('hidden', tab !== 'staging');
+        if (this.viewDiff) this.viewDiff.classList.toggle('hidden', tab !== 'diff');
+        if (this.viewBranches) this.viewBranches.classList.toggle('hidden', tab !== 'branches');
+        if (this.viewStashes) this.viewStashes.classList.toggle('hidden', tab !== 'stashes');
+
+        if (tab === 'branches') this.loadBranches();
+        if (tab === 'stashes') this.loadStashes();
+        if (tab === 'diff' && this.currentDiffData) this.renderDiffContent(this.currentDiffData);
       });
     });
 
-    // Sound Toggle
+    // Diff Mode Switching (Unified vs Split)
+    const setDiffMode = (mode) => {
+      this.diffMode = mode;
+      [this.btnWbDiffModeUnified, this.btnModalDiffUnified].forEach(b => b?.classList.toggle('active', mode === 'unified'));
+      [this.btnWbDiffModeSplit, this.btnModalDiffSplit].forEach(b => b?.classList.toggle('active', mode === 'split'));
+      if (this.currentDiffData) {
+        this.renderDiffContent(this.currentDiffData);
+      }
+    };
+
+    if (this.btnWbDiffModeUnified) this.btnWbDiffModeUnified.addEventListener('click', () => { sfx.click(); setDiffMode('unified'); });
+    if (this.btnWbDiffModeSplit) this.btnWbDiffModeSplit.addEventListener('click', () => { sfx.click(); setDiffMode('split'); });
+    if (this.btnModalDiffUnified) this.btnModalDiffUnified.addEventListener('click', () => { sfx.click(); setDiffMode('unified'); });
+    if (this.btnModalDiffSplit) this.btnModalDiffSplit.addEventListener('click', () => { sfx.click(); setDiffMode('split'); });
+
+    // Copy Diff buttons
+    const copyCurrentDiff = () => {
+      if (this.currentDiffData?.raw) {
+        navigator.clipboard.writeText(this.currentDiffData.raw).then(() => {
+          sfx.click();
+          this.showToast('Raw diff copied to clipboard!', 'success');
+        });
+      } else {
+        this.showToast('No diff content to copy', 'warn');
+      }
+    };
+    if (this.btnWbDiffCopy) this.btnWbDiffCopy.addEventListener('click', copyCurrentDiff);
+    if (this.btnModalDiffCopy) this.btnModalDiffCopy.addEventListener('click', copyCurrentDiff);
+
+    // Popout to Modal
+    if (this.btnWbDiffPopout) {
+      this.btnWbDiffPopout.addEventListener('click', () => {
+        sfx.click();
+        if (this.modalDiff) this.modalDiff.showModal();
+      });
+    }
+
+    // Toggle Maximize on Modal Diff
+    if (this.btnModalDiffToggleMaximize) {
+      this.btnModalDiffToggleMaximize.addEventListener('click', () => {
+        sfx.click();
+        if (this.modalDiff) {
+          const isMax = this.modalDiff.classList.toggle('maximized');
+          this.btnModalDiffToggleMaximize.textContent = isMax ? '🗗 Restore' : '⛶ Fullscreen';
+        }
+      });
+    }
+
+    // Stage / Discard from Diff View
+    if (this.btnWbDiffStageFile) {
+      this.btnWbDiffStageFile.addEventListener('click', () => {
+        if (this.currentDiffTarget?.filePath) {
+          this.executeFileAction('stage', this.currentDiffTarget.filePath);
+        } else {
+          this.showToast('Select a file diff first to stage', 'warn');
+        }
+      });
+    }
+
+    if (this.btnWbDiffDiscardFile) {
+      this.btnWbDiffDiscardFile.addEventListener('click', () => {
+        if (this.currentDiffTarget?.filePath) {
+          if (confirm(`Discard all local modifications in "${this.currentDiffTarget.filePath}"?`)) {
+            this.executeFileAction('discard', this.currentDiffTarget.filePath);
+          }
+        } else {
+          this.showToast('Select a file diff first to discard', 'warn');
+        }
+      });
+    }
+
+    // Conflict Full-Width Modal
+    if (this.btnExpandConflictFullWidth) {
+      this.btnExpandConflictFullWidth.addEventListener('click', () => {
+        sfx.click();
+        if (this.modalConflictFullWidth && this.activeConflictData) {
+          const { filePath, conflict } = this.activeConflictData;
+          if (this.fwConflictFileName) this.fwConflictFileName.textContent = `Full-Width Conflict: ${filePath}`;
+          if (this.fwCodeCurrent) this.fwCodeCurrent.textContent = conflict.currentCode || '// (empty in HEAD)';
+          if (this.fwCodeIncoming) this.fwCodeIncoming.textContent = conflict.incomingCode || '// (empty in incoming)';
+          this.modalConflictFullWidth.showModal();
+        }
+      });
+    }
+
+    if (this.btnFwPickCurrent) {
+      this.btnFwPickCurrent.addEventListener('click', () => {
+        if (this.modalConflictFullWidth) this.modalConflictFullWidth.close();
+        this.resolveActiveConflict('current');
+      });
+    }
+
+    if (this.btnFwPickIncoming) {
+      this.btnFwPickIncoming.addEventListener('click', () => {
+        if (this.modalConflictFullWidth) this.modalConflictFullWidth.close();
+        this.resolveActiveConflict('incoming');
+      });
+    }
+
+    if (this.btnFwPickBoth) {
+      this.btnFwPickBoth.addEventListener('click', () => {
+        if (this.modalConflictFullWidth) this.modalConflictFullWidth.close();
+        this.resolveActiveConflict('both');
+      });
+    }
+
+    // Staging Actions
+    if (this.btnStageAll) {
+      this.btnStageAll.addEventListener('click', () => this.executeFileAction('stage_all'));
+    }
+    if (this.btnUnstageAll) {
+      this.btnUnstageAll.addEventListener('click', () => this.executeFileAction('unstage_all'));
+    }
+    if (this.btnCommitStagedOnly) {
+      this.btnCommitStagedOnly.addEventListener('click', () => this.commitStagingChanges(false));
+    }
+    if (this.btnStageAllAndCommit) {
+      this.btnStageAllAndCommit.addEventListener('click', () => this.commitStagingChanges(true));
+    }
+
+    // Branch Toolbar
+    if (this.btnCreateNewBranchToolbar) {
+      this.btnCreateNewBranchToolbar.addEventListener('click', () => this.promptCreateBranch());
+    }
+    if (this.branchFilterInput) {
+      this.branchFilterInput.addEventListener('input', () => this.filterBranches());
+    }
+
+    // Stashes Toolbar
+    if (this.btnCreateStashNow) {
+      this.btnCreateStashNow.addEventListener('click', () => this.createStashFromInput());
+    }
+
+    // Explorer Search
+    if (this.explorerFilterInput) {
+      this.explorerFilterInput.addEventListener('input', () => this.filterExplorerFolders());
+    }
+
+    this.btnRefreshRepo.addEventListener('click', () => {
+      sfx.click();
+      this.refreshActiveRepo();
+      this.showToast('Synchronized with local repository', 'info');
+    });
+
+    // Git Doctor Modal Open
+    this.btnToolDoctor.addEventListener('click', () => {
+      sfx.click();
+      this.openDoctorModal();
+    });
+
+    this.btnRerunDoctor.addEventListener('click', () => {
+      sfx.click();
+      this.openDoctorModal();
+    });
+
+    // Checkpoint Modal Open
+    this.btnToolCheckpoint.addEventListener('click', () => {
+      sfx.click();
+      this.openCheckpointModal();
+    });
+
+    this.btnCreateCheckpoint.addEventListener('click', () => this.createCheckpoint());
+
+    // Surgical Tool Modals Open
+    this.btnToolSquash.addEventListener('click', () => {
+      sfx.click();
+      this.modalSquash.showModal();
+    });
+
+    this.btnToolUndo.addEventListener('click', () => {
+      sfx.click();
+      this.modalUndo.showModal();
+    });
+
+    this.btnToolMoveBranch.addEventListener('click', () => {
+      sfx.click();
+      this.modalMoveBranch.showModal();
+    });
+
+    this.btnToolReflog.addEventListener('click', () => {
+      sfx.click();
+      this.openReflogTimeMachine();
+    });
+
+    // Squash Slider
+    this.squashCountSlider.addEventListener('input', (e) => {
+      const val = e.target.value;
+      this.squashCountLabel.textContent = `${val} commits`;
+      this.squashCmdCount.textContent = val;
+    });
+
+    // Real Squash Execution
+    this.btnExecuteRealSquash.addEventListener('click', async () => {
+      if (!this.activeRepo) return;
+      const count = parseInt(this.squashCountSlider.value, 10);
+      const message = this.squashMsgInput.value.trim() || 'feat: squashed PR commits';
+      
+      this.modalSquash.close();
+      sfx.click();
+      this.appendTerminalOutput(`git reset --soft HEAD~${count} && git commit -m "${message}"`, 'Executing real squash...', 'dim');
+
+      try {
+        const res = await fetch('/api/squash', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            repoPath: this.activeRepo.path,
+            count: count,
+            message: message
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          sfx.success();
+          this.appendTerminalOutput(`git squash (${count} commits)`, data.stdout || 'Squash completed successfully.', 'stdout');
+          this.showToast(`Squashed last ${count} commits into 1 atomic commit!`, 'success');
+        } else {
+          sfx.error();
+          this.appendTerminalOutput(`git squash`, data.stderr || 'Failed to squash commits.', 'stderr');
+          this.showToast('Squash failed: ' + (data.stderr || 'Unknown error'), 'danger');
+        }
+        this.refreshActiveRepo();
+      } catch (err) {
+        this.showToast(err.message, 'danger');
+      }
+    });
+
+    // Real Undo Execution
+    this.btnExecuteRealUndo.addEventListener('click', async () => {
+      if (!this.activeRepo) return;
+      const mode = document.querySelector('input[name="undoMode"]:checked')?.value || 'soft';
+      this.modalUndo.close();
+
+      sfx.click();
+      this.appendTerminalOutput(`git reset --${mode} HEAD~1`, 'Undoing latest commit on disk...', 'dim');
+
+      try {
+        const res = await fetch('/api/undo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            repoPath: this.activeRepo.path,
+            mode: mode
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          sfx.success();
+          this.appendTerminalOutput(`git reset --${mode} HEAD~1`, data.stdout || 'Last commit undone safely. Code preserved in tree.', 'stdout');
+          this.showToast('Latest commit undone cleanly!', 'success');
+        } else {
+          sfx.error();
+          this.appendTerminalOutput(`git reset --${mode} HEAD~1`, data.stderr, 'stderr');
+          this.showToast('Undo failed', 'danger');
+        }
+        this.refreshActiveRepo();
+      } catch (err) {
+        this.showToast(err.message, 'danger');
+      }
+    });
+
+    // Real Move to Branch Execution
+    this.btnExecuteMoveBranch.addEventListener('click', async () => {
+      if (!this.activeRepo) return;
+      const branchName = this.moveBranchNameInput.value.trim();
+      if (!branchName) return;
+      this.modalMoveBranch.close();
+
+      sfx.click();
+      this.appendTerminalOutput(`Move commit to ${branchName}`, `Creating ${branchName} and rewinding current branch...`, 'dim');
+
+      try {
+        const res = await fetch('/api/move-branch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            repoPath: this.activeRepo.path,
+            branchName: branchName,
+            count: 1
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          sfx.success();
+          this.appendTerminalOutput(`Switched to ${branchName}`, `Work moved to ${branchName} and previous branch rewound cleanly!`, 'stdout');
+          this.showToast(`Work moved to branch "${branchName}"!`, 'success');
+        } else {
+          sfx.error();
+          this.appendTerminalOutput('Move to branch', data.stderr || 'Command failed.', 'stderr');
+          this.showToast('Move failed: ' + data.stderr, 'danger');
+        }
+        this.refreshActiveRepo();
+      } catch (err) {
+        this.showToast(err.message, 'danger');
+      }
+    });
+
+    // Terminal Command Execution with History
+    this.terminalForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const rawCmd = this.terminalCmdInput.value.trim();
+      if (!rawCmd) return;
+      this.cmdHistory.push(rawCmd);
+      this.historyIndex = this.cmdHistory.length;
+      this.terminalCmdInput.value = '';
+      this.executeGitCommand(rawCmd);
+    });
+
+    this.terminalCmdInput.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowUp') {
+        if (this.historyIndex > 0) {
+          this.historyIndex--;
+          this.terminalCmdInput.value = this.cmdHistory[this.historyIndex];
+        }
+      } else if (e.key === 'ArrowDown') {
+        if (this.historyIndex < this.cmdHistory.length - 1) {
+          this.historyIndex++;
+          this.terminalCmdInput.value = this.cmdHistory[this.historyIndex];
+        } else {
+          this.historyIndex = this.cmdHistory.length;
+          this.terminalCmdInput.value = '';
+        }
+      }
+    });
+
+    // Quick Command Chips
+    document.querySelectorAll('.chip-cmd').forEach(chip => {
+      chip.addEventListener('click', () => {
+        sfx.click();
+        this.executeGitCommand(chip.dataset.cmd);
+      });
+    });
+
+    this.btnClearTerminal.addEventListener('click', () => {
+      this.terminalOutput.innerHTML = '';
+      this.showToast('Console cleared', 'info');
+    });
+
+    this.btnCopyTerminal.addEventListener('click', () => {
+      navigator.clipboard.writeText(this.terminalOutput.innerText).then(() => {
+        sfx.click();
+        this.showToast('Console output copied!', 'success');
+      });
+    });
+
+    // Remote Sync Bar
+    if (this.btnQuickPull) {
+      this.btnQuickPull.addEventListener('click', () => this.executeGitSync('pull'));
+    }
+    if (this.btnQuickPush) {
+      this.btnQuickPush.addEventListener('click', () => this.executeGitSync('push'));
+    }
+    if (this.btnQuickFetch) {
+      this.btnQuickFetch.addEventListener('click', () => this.executeGitSync('fetch'));
+    }
+    if (this.btnQuickStash) {
+      this.btnQuickStash.addEventListener('click', () => this.executeStashAction('save', 'Quick stash via topbar'));
+    }
+    if (this.btnQuickStashPop) {
+      this.btnQuickStashPop.addEventListener('click', () => this.executeStashAction('pop'));
+    }
+
+    // Conventional Commit Prefix Chips
+    document.querySelectorAll('.chip-preset').forEach(chip => {
+      chip.addEventListener('click', () => {
+        sfx.click();
+        const prefix = chip.dataset.prefix || '';
+        if (this.composerCommitMsg) {
+          const cur = this.composerCommitMsg.value;
+          const cleaned = cur.replace(/^(feat|fix|refactor|chore|docs|style|test|perf)(\([^)]+\))?:\s*/i, '');
+          this.composerCommitMsg.value = prefix + cleaned;
+          this.composerCommitMsg.focus();
+        }
+      });
+    });
+
+    // Discard All Unstaged Changes
+    if (this.btnDiscardAllUnstaged) {
+      this.btnDiscardAllUnstaged.addEventListener('click', async () => {
+        if (confirm('Discard all local unstaged modifications in this repository? This cannot be undone.')) {
+          await this.executeFileAction('discard_all');
+        }
+      });
+    }
+
+    // DAG Commit Live Search Filter
+    if (this.commitSearchInput) {
+      this.commitSearchInput.addEventListener('input', () => {
+        const q = (this.commitSearchInput.value || '').toLowerCase().trim();
+        const cards = this.swimlaneTracks.querySelectorAll('.commit-node-card');
+        cards.forEach(card => {
+          const text = card.textContent.toLowerCase();
+          if (!q || text.includes(q)) {
+            card.style.opacity = '1';
+            card.style.filter = 'none';
+          } else {
+            card.style.opacity = '0.2';
+            card.style.filter = 'grayscale(1)';
+          }
+        });
+      });
+    }
+
+    // 1-Click Disaster Rescue Suite
+    if (this.btnRescueMainAccident) {
+      this.btnRescueMainAccident.addEventListener('click', () => {
+        sfx.click();
+        this.modalMoveBranch.showModal();
+      });
+    }
+    if (this.btnRescueSoftUndo) {
+      this.btnRescueSoftUndo.addEventListener('click', () => {
+        sfx.click();
+        this.modalUndo.showModal();
+      });
+    }
+    if (this.btnRescueSquashWIP) {
+      this.btnRescueSquashWIP.addEventListener('click', () => {
+        sfx.click();
+        this.modalSquash.showModal();
+      });
+    }
+    if (this.btnRescueLostCommits) {
+      this.btnRescueLostCommits.addEventListener('click', () => {
+        sfx.click();
+        this.openReflogTimeMachine();
+      });
+    }
+
+    this.btnRealCommit.addEventListener('click', () => {
+      const msg = this.inputCommitMsg.value.trim();
+      if (!msg) {
+        this.showToast('Please type a commit message first', 'warn');
+        this.inputCommitMsg.focus();
+        return;
+      }
+      this.inputCommitMsg.value = '';
+      this.executeGitCommand(`git add . && git commit -m "${msg}"`);
+    });
+
+    this.btnNewBranchPrompt.addEventListener('click', () => {
+      const name = prompt('Enter new branch name:');
+      if (name && name.trim()) {
+        this.executeGitCommand(`git checkout -b ${name.trim()}`);
+      }
+    });
+
+    // Conflict Resolutions
+    this.btnRealPickCurrent.addEventListener('click', () => this.resolveActiveConflict('current'));
+    this.btnRealPickIncoming.addEventListener('click', () => this.resolveActiveConflict('incoming'));
+    this.btnRealPickBoth.addEventListener('click', () => this.resolveActiveConflict('both'));
+
+    // Sound & Guide
     this.btnSoundToggle.addEventListener('click', () => {
       sfx.enabled = !sfx.enabled;
       this.sfxIconOn.classList.toggle('hidden', !sfx.enabled);
@@ -277,412 +1194,1929 @@ class GitSurgeryApp {
       if (sfx.enabled) sfx.click();
     });
 
-    // Guide Dialog
     this.btnOpenGuide.addEventListener('click', () => {
       sfx.click();
       this.guideDialog.showModal();
     });
 
-    // Reset Scenario
-    this.btnResetAll.addEventListener('click', () => {
-      sfx.click();
-      this.loadScenario(this.currentScenarioKey);
-      this.showToast('Scenario reloaded to fresh state', 'info');
+    // Call setups for Inspector and Copilot
+    this.setupActionInspector();
+    this.setupCopilot();
+  }
+
+  // ==========================================================================
+  // Action Impact Inspector & Plain English Information
+  // ==========================================================================
+  setupActionInspector() {
+    this.actionExplanations = ACTION_EXPLANATIONS;
+
+    // Delegate mouseover, focusin, mouseout, focusout across the entire document
+    document.addEventListener('mouseover', (e) => {
+      const target = e.target.closest('button, input, select, .chip-preset, .chip-cmd, .wb-tab, .copilot-chip, .btn-rescue, .btn-pick, a');
+      if (target) this.inspectElement(target);
     });
 
-    // Primary Fix CTA (Top Banner)
-    this.btnPrimaryFix.addEventListener('click', () => {
-      sfx.success();
-      if (this.currentScenarioKey === 'rebase-conflict') {
-        this.resolveConflict('both');
-      } else if (this.currentScenarioKey === 'accidental-main') {
-        this.fixAccidentalMain();
-      } else if (this.currentScenarioKey === 'squash-pr') {
-        this.executeSquash();
-      } else if (this.currentScenarioKey === 'reflog-rescue') {
-        this.executeReflogRescue();
+    document.addEventListener('focusin', (e) => {
+      const target = e.target.closest('button, input, select, .chip-preset, .chip-cmd, .wb-tab, .copilot-chip, .btn-rescue, .btn-pick, a');
+      if (target) this.inspectElement(target);
+    });
+
+    document.addEventListener('mouseout', (e) => {
+      const target = e.target.closest('button, input, select, .chip-preset, .chip-cmd, .wb-tab, .copilot-chip, .btn-rescue, .btn-pick, a');
+      if (target) this.scheduleResetInspector();
+    });
+
+    document.addEventListener('focusout', (e) => {
+      const target = e.target.closest('button, input, select, .chip-preset, .chip-cmd, .wb-tab, .copilot-chip, .btn-rescue, .btn-pick, a');
+      if (target) this.scheduleResetInspector();
+    });
+  }
+
+  inspectElement(el) {
+    if (this.inspectorIdleTimer) {
+      clearTimeout(this.inspectorIdleTimer);
+      this.inspectorIdleTimer = null;
+    }
+
+    const id = el.id;
+    let info = this.actionExplanations[id];
+
+    // Check data attributes or custom classes if not found by id
+    if (!info) {
+      if (el.classList.contains('chip-preset')) {
+        info = {
+          name: `Prefix: "${el.dataset.prefix || el.textContent}"`,
+          safety: 'safe',
+          badge: '🟢 Commit Convention',
+          desc: `Prepends standardized conventional commit prefix "${el.dataset.prefix || el.textContent}" to your message for clear Git log history.`,
+          cmd: 'Message formatting only'
+        };
+      } else if (el.classList.contains('wb-tab')) {
+        const tabName = el.dataset.tab;
+        info = {
+          name: `Switch to "${el.textContent.trim()}" View`,
+          safety: 'safe',
+          badge: '🟢 View Navigation',
+          desc: `Switches workspace tab to view ${tabName} without altering any files or branch history.`,
+          cmd: 'UI view switch'
+        };
+      } else if (el.classList.contains('copilot-chip')) {
+        info = {
+          name: `Intent: "${el.dataset.intent}"`,
+          safety: 'safe',
+          badge: '💡 Quick Goal',
+          desc: `Instructs the Copilot to diagnose this scenario and recommend the safest, best Git commands.`,
+          cmd: 'Copilot query'
+        };
+      } else if (el.classList.contains('chip-cmd')) {
+        info = {
+          name: `Quick Run: "${el.dataset.cmd}"`,
+          safety: 'safe',
+          badge: '💻 Terminal CLI',
+          desc: `Executes standard git command "${el.dataset.cmd}" in the console with live streaming output.`,
+          cmd: el.dataset.cmd
+        };
+      } else if (el.title) {
+        info = {
+          name: el.textContent.trim() || 'Git Action',
+          safety: 'safe',
+          badge: '🟢 Action Info',
+          desc: el.title,
+          cmd: el.getAttribute('data-cmd') || 'Git operation'
+        };
       }
+    }
+
+    if (info) {
+      this.updateActionInspector(info);
+    }
+  }
+
+  updateActionInspector(info) {
+    if (!this.actionInspectorBar) return;
+    this.actionInspectorBar.classList.add('inspector-active');
+    this.actionInspectorBar.classList.remove('inspector-destructive', 'inspector-reversible');
+
+    if (info.safety === 'destructive') {
+      this.actionInspectorBar.classList.add('inspector-destructive');
+      this.inspectorIcon.textContent = '🚨';
+    } else if (info.safety === 'reversible') {
+      this.actionInspectorBar.classList.add('inspector-reversible');
+      this.inspectorIcon.textContent = '⚠️';
+    } else {
+      this.inspectorIcon.textContent = 'ℹ️';
+    }
+
+    this.inspectorActionName.textContent = info.name || 'Git Action';
+    
+    // Safety badge
+    this.inspectorSafetyBadge.className = `safety-badge badge-${info.safety || 'safe'}`;
+    this.inspectorSafetyBadge.textContent = info.badge || '🟢 Safe';
+
+    this.inspectorDesc.textContent = info.desc || '';
+
+    if (info.cmd && info.cmd !== 'UI view switch' && info.cmd !== 'Console clear') {
+      this.inspectorCmdBox.classList.remove('hidden');
+      this.inspectorCmdCode.textContent = info.cmd;
+    } else {
+      this.inspectorCmdBox.classList.add('hidden');
+    }
+  }
+
+  scheduleResetInspector() {
+    if (this.inspectorIdleTimer) clearTimeout(this.inspectorIdleTimer);
+    this.inspectorIdleTimer = setTimeout(() => {
+      if (!this.actionInspectorBar) return;
+      this.actionInspectorBar.classList.remove('inspector-active', 'inspector-destructive', 'inspector-reversible');
+      this.inspectorIcon.textContent = '💡';
+      this.inspectorActionName.textContent = 'Action Impact Inspector';
+      this.inspectorSafetyBadge.className = 'safety-badge badge-safe';
+      this.inspectorSafetyBadge.textContent = '🟢 Interactive Guide';
+      this.inspectorDesc.textContent = 'Hover over any button or tool in the workspace to preview what will happen to your files and Git history before clicking.';
+      this.inspectorCmdBox.classList.add('hidden');
+    }, 400);
+  }
+
+  // ==========================================================================
+  // Smart Git Intent & Recommendation Copilot
+  // ==========================================================================
+  setupCopilot() {
+    if (this.btnAnalyzeIntent) {
+      this.btnAnalyzeIntent.addEventListener('click', () => {
+        sfx.click();
+        this.analyzeIntent(this.copilotQueryInput ? this.copilotQueryInput.value : '');
+      });
+    }
+
+    if (this.copilotQueryInput) {
+      this.copilotQueryInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          sfx.click();
+          this.analyzeIntent(this.copilotQueryInput.value);
+        }
+      });
+
+      this.copilotQueryInput.addEventListener('input', () => {
+        if (this.btnClearCopilotInput) {
+          this.btnClearCopilotInput.classList.toggle('hidden', !this.copilotQueryInput.value);
+        }
+      });
+    }
+
+    if (this.btnClearCopilotInput) {
+      this.btnClearCopilotInput.addEventListener('click', () => {
+        this.copilotQueryInput.value = '';
+        this.btnClearCopilotInput.classList.add('hidden');
+        document.querySelectorAll('.copilot-chip').forEach(c => c.classList.remove('active'));
+        this.analyzeIntent('');
+      });
+    }
+
+    if (this.btnQuickRepoDiagnose) {
+      this.btnQuickRepoDiagnose.addEventListener('click', () => {
+        sfx.click();
+        this.analyzeIntent(this.copilotQueryInput ? this.copilotQueryInput.value : '');
+        this.showToast('Re-diagnosed repository condition', 'info');
+      });
+    }
+
+    // Quick intent preset chips
+    document.querySelectorAll('.copilot-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        sfx.click();
+        const intent = chip.dataset.intent;
+        if (this.copilotQueryInput) {
+          this.copilotQueryInput.value = intent;
+        }
+        if (this.btnClearCopilotInput) {
+          this.btnClearCopilotInput.classList.remove('hidden');
+        }
+        document.querySelectorAll('.copilot-chip').forEach(c => c.classList.toggle('active', c === chip));
+        this.analyzeIntent(intent);
+      });
     });
 
-    // Conflict Resolution Buttons
-    this.btnPickCurrent.addEventListener('click', () => this.resolveConflict('current'));
-    this.btnPickIncoming.addEventListener('click', () => this.resolveConflict('incoming'));
-    this.btnPickBoth.addEventListener('click', () => this.resolveConflict('both'));
-
-    // Squash Action
-    this.btnExecuteSquash.addEventListener('click', () => this.executeSquash());
-
-    // Copy Terminal Script
-    this.btnCopyCommands.addEventListener('click', () => this.copyCommands());
-
-    // Quick Injections
-    this.btnAddCommit.addEventListener('click', () => this.injectCommit());
-    this.btnBranchOut.addEventListener('click', () => this.injectBranch());
-
-    // Dialog Light Dismiss Fallback
-    if (!('closedBy' in HTMLDialogElement.prototype)) {
-      this.guideDialog.addEventListener('click', (e) => {
-        if (e.target !== this.guideDialog) return;
-        const rect = this.guideDialog.getBoundingClientRect();
-        const inDialog = (
-          rect.top <= e.clientY && e.clientY <= rect.top + rect.height &&
-          rect.left <= e.clientX && e.clientX <= rect.left + rect.width
-        );
-        if (!inDialog) this.guideDialog.close();
+    // 1-Click Execution for Recommended Action
+    if (this.btnExecuteRecommendedAction) {
+      this.btnExecuteRecommendedAction.addEventListener('click', () => {
+        if (this.currentRecommendation) {
+          this.executeRecommendedAction(this.currentRecommendation);
+        }
       });
     }
   }
 
-  loadScenario(scenarioKey) {
-    this.currentScenarioKey = scenarioKey;
-    // Deep clone scenario data so mutations don't dirty template
-    this.scenarioData = JSON.parse(JSON.stringify(SCENARIOS[scenarioKey]));
-
-    // Update Tab states
-    this.missionTabs.forEach(t => {
-      t.classList.toggle('active', t.dataset.scenario === scenarioKey);
-    });
-
-    // Update Hero Banner
-    this.situationBanner.classList.remove('resolved');
-    this.bannerBadgeText.textContent = this.scenarioData.badge;
-    this.bannerHeading.textContent = this.scenarioData.heading;
-    this.bannerSubheading.textContent = this.scenarioData.subheading;
-    this.btnPrimaryFixText.textContent = this.scenarioData.primaryFixText;
-
-    // Render Swimlane
-    this.renderSwimlane();
-
-    // Toggle Panels
-    if (scenarioKey === 'rebase-conflict') {
-      this.conflictCard.classList.remove('hidden');
-      this.rebaseCard.classList.add('hidden');
-      this.diffContainer.classList.remove('hidden');
-      this.smartCombineBox.classList.remove('hidden');
-      this.resolvedResultBox.classList.add('hidden');
-      this.statusPill.className = 'status-pill status-unresolved';
-      this.statusPill.textContent = 'Needs Decision';
-    } else if (scenarioKey === 'squash-pr') {
-      this.conflictCard.classList.add('hidden');
-      this.rebaseCard.classList.remove('hidden');
-      this.renderRebaseStepper();
-    } else {
-      this.conflictCard.classList.add('hidden');
-      this.rebaseCard.classList.add('hidden');
+  async analyzeIntent(query = '') {
+    if (!this.activeRepo) return;
+    
+    if (this.copilotDiagnosisText) {
+      this.copilotDiagnosisText.textContent = 'Diagnosing live repository condition...';
     }
 
-    // Render Terminal Assistant
-    this.renderTerminalCommands(this.scenarioData.commands);
+    try {
+      const res = await fetch('/api/analyze-intent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          repoPath: this.activeRepo.path,
+          query: query
+        })
+      });
+
+      if (!res.ok) throw new Error('Failed to analyze intent');
+      const data = await res.json();
+      this.renderRecommendation(data);
+    } catch (err) {
+      // In-browser Vercel Web Mode fallback
+      this.analyzeIntentClientSide(query);
+    }
   }
 
-  renderSwimlane() {
-    this.swimlaneTracks.innerHTML = '';
+  analyzeIntentClientSide(query = '') {
+    const status = this.currentStatus || { branch: 'master', isClean: true, stagedCount: 0, unstagedCount: 0, untrackedCount: 0, conflictedFiles: [], ahead: 0, behind: 0 };
+    const q = (query || '').toLowerCase().trim();
+    const branch = status.branch || 'master';
+    const isMain = ['master', 'main', 'production'].includes(branch.toLowerCase());
+    const unstaged = status.unstagedCount || 0;
+    const staged = status.stagedCount || 0;
+    const conflicted = status.conflictedFiles || [];
 
-    this.scenarioData.lanes.forEach(lane => {
-      const laneRow = document.createElement('div');
-      laneRow.className = 'branch-lane-row';
+    let rec = null;
+    let alts = [];
+    const diag = `Branch: '${branch}'${isMain ? ' (Protected Branch)' : ''} • ${conflicted.length ? '⚠️ Conflicts present' : (unstaged || staged ? `${unstaged} unstaged, ${staged} staged` : 'Working tree clean')}`;
 
-      // Header Bar for the lane
-      const labelBar = document.createElement('div');
-      labelBar.className = 'lane-label-bar';
-      labelBar.innerHTML = `
-        <span class="lane-name-badge" style="color: ${lane.color};">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="6" y1="3" x2="6" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path></svg>
-          ${lane.name}
-        </span>
-        <span style="font-size: 0.7rem; color: var(--text-muted);">${lane.commits.length} commits</span>
-      `;
-      laneRow.appendChild(labelBar);
+    if (conflicted.length > 0 || q.includes('conflict')) {
+      rec = {
+        actionId: 'resolve_conflicts',
+        title: 'Open 3-Way Visual Conflict Resolver',
+        safety: 'safe',
+        safetyLabel: '🟢 Safe Guided Surgery',
+        summary: `Found ${conflicted.length || 1} file(s) with active merge conflict markers.`,
+        whatWillHappen: [
+          'Opens the side-by-side 3-way collision solver.',
+          'Choose Your Version, Incoming Version, or Combine Both with 1 click.',
+          'Cleans conflict markers and stages the file (git add) automatically.'
+        ],
+        command: `git add ${conflicted[0] || 'src/app.js'}`,
+        executionType: 'open_conflict_resolver',
+        buttonText: '🔍 Open Visual Conflict Solver'
+      };
+    } else if (q.includes('main') || q.includes('master') || (isMain && status.ahead > 0)) {
+      rec = {
+        actionId: 'move_to_new_branch',
+        title: 'Move Commit(s) to New Feature Branch & Restore Main',
+        safety: 'safe',
+        safetyLabel: '🟢 100% Safe (All Commits Preserved)',
+        summary: `Moves recent commits to a new feature branch and safely rolls '${branch}' back to clean state.`,
+        whatWillHappen: [
+          'Creates a new branch pointing to your latest commit, preserving 100% of your work.',
+          `Rewinds '${branch}' back 1 commit so production stays clean.`,
+          'Switches your workspace onto the new feature branch.'
+        ],
+        command: `git branch feature/my-work && git reset --hard HEAD~1 && git checkout feature/my-work`,
+        executionType: 'move_branch',
+        buttonText: '🌿 Move to New Branch & Restore Main'
+      };
+      alts.push({ title: 'Soft Undo Commit', desc: 'Keep changes in staging and remove commit from main.', command: 'git reset --soft HEAD~1' });
+    } else if (q.includes('undo') || q.includes('revert')) {
+      rec = {
+        actionId: 'soft_undo_commit',
+        title: 'Soft Undo Last Commit (Keep All Code)',
+        safety: 'safe',
+        safetyLabel: '🟢 100% Safe (No Code Lost)',
+        summary: 'Removes the latest commit snapshot from history, leaving 100% of your modified code in staging.',
+        whatWillHappen: [
+          'Erases the latest commit record from branch history.',
+          'Places all files from that commit back into Staging.',
+          'Zero lines of code are lost. You can edit and commit again.'
+        ],
+        command: 'git reset --soft HEAD~1',
+        executionType: 'undo_commit',
+        buttonText: '⏪ Soft Undo Latest Commit'
+      };
+    } else if (q.includes('discard') || q.includes('clean')) {
+      rec = {
+        actionId: 'discard_unstaged',
+        title: 'Discard All Local Unstaged Modifications',
+        safety: 'destructive',
+        safetyLabel: '🔴 Destructive (Unsaved Work Lost)',
+        summary: `Reverts all unstaged files back to last commit.`,
+        whatWillHappen: [
+          'Reverts all unstaged edits back to HEAD.',
+          'Removes untracked files.',
+          'WARNING: Unsaved edits will be permanently overwritten.'
+        ],
+        command: 'git checkout -- . && git clean -fd',
+        executionType: 'discard_all',
+        buttonText: '✕ Discard All Unstaged Changes'
+      };
+    } else {
+      rec = {
+        actionId: 'stage_and_commit',
+        title: 'Stage All Changes & Commit Atomically',
+        safety: 'safe',
+        safetyLabel: '🟢 100% Safe (Permanent Save)',
+        summary: `Stages your modified files and creates a new commit snapshot.`,
+        whatWillHappen: [
+          'Runs git add -A to stage all files.',
+          'Creates a new permanent commit snapshot in your branch DAG.'
+        ],
+        command: 'git add -A && git commit -m "feat: updates"',
+        executionType: 'stage_and_commit',
+        buttonText: '⚡ Stage All & Commit'
+      };
+    }
 
-      // Commit Chain
-      const chain = document.createElement('div');
-      chain.className = 'commit-chain';
+    this.renderRecommendation({
+      query: query,
+      diagnosis: diag,
+      recommendation: rec,
+      alternatives: alts
+    });
+  }
 
-      lane.commits.forEach((c, idx) => {
-        // Connector Arrow between commits
-        if (idx > 0) {
-          const arrow = document.createElement('div');
-          arrow.className = 'node-connector-arrow';
-          arrow.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>`;
-          chain.appendChild(arrow);
+  renderRecommendation(data) {
+    if (!data || !data.recommendation) return;
+    const rec = data.recommendation;
+    this.currentRecommendation = rec;
+
+    if (this.copilotDiagnosisText) {
+      this.copilotDiagnosisText.textContent = data.diagnosis || 'Repository analyzed.';
+    }
+
+    if (this.copilotSafetyBadge) {
+      this.copilotSafetyBadge.className = `safety-badge badge-${rec.safety || 'safe'}`;
+      this.copilotSafetyBadge.textContent = rec.safetyLabel || '🟢 Safe';
+    }
+
+    if (this.copilotActionTitle) {
+      this.copilotActionTitle.textContent = rec.title;
+    }
+
+    if (this.copilotActionSummary) {
+      this.copilotActionSummary.textContent = rec.summary;
+    }
+
+    if (this.copilotWhatHappensList) {
+      this.copilotWhatHappensList.innerHTML = (rec.whatWillHappen || [])
+        .map(item => `<li>${item}</li>`)
+        .join('');
+    }
+
+    if (this.copilotCmdPreview) {
+      this.copilotCmdPreview.textContent = rec.command || '';
+    }
+
+    if (this.copilotExecBtnText) {
+      this.copilotExecBtnText.textContent = rec.buttonText || '⚡ Execute Recommended Action';
+    }
+
+    // Render Alternatives
+    if (this.copilotAlternativesGroup) {
+      this.copilotAlternativesGroup.innerHTML = '';
+      if (data.alternatives && data.alternatives.length > 0) {
+        const altLabel = document.createElement('span');
+        altLabel.style.fontSize = '0.64rem';
+        altLabel.style.fontWeight = '700';
+        altLabel.style.color = 'var(--text-dim)';
+        altLabel.textContent = 'ALTERNATIVES:';
+        this.copilotAlternativesGroup.appendChild(altLabel);
+
+        data.alternatives.forEach(alt => {
+          const chip = document.createElement('button');
+          chip.type = 'button';
+          chip.className = 'btn-alt-chip';
+          chip.title = alt.desc || alt.title;
+          chip.textContent = `${alt.title} ↗`;
+          chip.addEventListener('click', () => {
+            sfx.click();
+            if (this.copilotQueryInput) this.copilotQueryInput.value = alt.title;
+            this.analyzeIntent(alt.title);
+          });
+          this.copilotAlternativesGroup.appendChild(chip);
+        });
+      }
+    }
+  }
+
+  async executeRecommendedAction(rec) {
+    if (!rec || !this.activeRepo) return;
+    sfx.click();
+
+    const type = rec.executionType;
+    const payload = rec.executionPayload || {};
+
+    this.appendTerminalOutput(rec.command || rec.title, `Executing recommended action: ${rec.title}...`, 'dim');
+
+    try {
+      if (type === 'move_branch') {
+        const branchName = payload.branchName || prompt('Enter feature branch name to move commits to:', 'feature/my-work');
+        if (!branchName) return;
+        
+        const res = await fetch('/api/move-branch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            repoPath: this.activeRepo.path,
+            branchName: branchName,
+            count: payload.count || 1
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          sfx.success();
+          this.appendTerminalOutput(`git checkout ${branchName}`, `Successfully moved commits to '${branchName}' and restored main!`, 'stdout');
+          this.showToast(`Work moved to '${branchName}' and main restored!`, 'success');
+        } else {
+          sfx.error();
+          this.appendTerminalOutput('Move branch', data.stderr || 'Failed to move branch.', 'stderr');
+          this.showToast('Failed to move branch', 'danger');
+        }
+        this.refreshActiveRepo();
+      }
+      else if (type === 'undo_commit') {
+        const mode = payload.mode || 'soft';
+        const res = await fetch('/api/undo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            repoPath: this.activeRepo.path,
+            mode: mode
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          sfx.success();
+          this.appendTerminalOutput(`git reset --${mode} HEAD~1`, 'Undone commit safely. Code preserved in working tree.', 'stdout');
+          this.showToast('Undone commit safely!', 'success');
+        } else {
+          sfx.error();
+          this.appendTerminalOutput(`git reset --${mode} HEAD~1`, data.stderr, 'stderr');
+          this.showToast('Undo commit failed', 'danger');
+        }
+        this.refreshActiveRepo();
+      }
+      else if (type === 'discard_all') {
+        if (!confirm('Are you sure you want to discard all unstaged changes? Unsaved edits will be permanently lost.')) return;
+        await this.executeFileAction('discard_all');
+      }
+      else if (type === 'stash_save') {
+        await this.executeStashAction('save', payload.message || 'Saved via Copilot');
+      }
+      else if (type === 'open_conflict_resolver') {
+        if (this.currentStatus && this.currentStatus.conflictedFiles && this.currentStatus.conflictedFiles.length > 0) {
+          this.checkAndDisplayConflict(this.currentStatus.conflictedFiles[0]);
+          if (this.btnExpandConflictFullWidth) {
+            this.btnExpandConflictFullWidth.click();
+          }
+        } else {
+          this.showToast('No active conflicted files found.', 'info');
+        }
+      }
+      else if (type === 'open_squash_modal') {
+        if (this.modalSquash) {
+          this.modalSquash.showModal();
+        }
+      }
+      else if (type === 'open_reflog') {
+        this.openReflogTimeMachine();
+      }
+      else if (type === 'doctor_repair') {
+        const res = await fetch('/api/doctor-repair', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            repoPath: this.activeRepo.path,
+            action: payload.action
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          sfx.success();
+          this.appendTerminalOutput(`Git Doctor: ${payload.action}`, data.msg || 'Repair succeeded.', 'stdout');
+          this.showToast(data.msg || 'Repair executed successfully!', 'success');
+        } else {
+          sfx.error();
+          this.appendTerminalOutput(`Git Doctor: ${payload.action}`, data.error || 'Repair failed.', 'stderr');
+          this.showToast('Repair failed: ' + (data.error || 'Unknown error'), 'danger');
+        }
+        this.refreshActiveRepo();
+      }
+      else if (type === 'sync') {
+        await this.executeGitSync(payload.action, payload.branch);
+      }
+      else if (type === 'stage_and_commit') {
+        const msg = payload.message || (this.composerCommitMsg ? this.composerCommitMsg.value.trim() : '') || 'feat: save progress';
+        await this.executeGitCommand(`git add -A && git commit -m "${msg}"`);
+      }
+      else if (type === 'branch_create') {
+        const name = payload.branchName || prompt('Enter new branch name:', 'feature/new-task');
+        if (name) {
+          await this.executeBranchAction('create', name.trim());
+        }
+      }
+      else {
+        if (rec.command) {
+          await this.executeGitCommand(rec.command);
+        }
+      }
+    } catch (err) {
+      sfx.error();
+      this.showToast('Execution error: ' + err.message, 'danger');
+    }
+  }
+
+  async loadProjects(selectPath = null) {
+    try {
+      const res = await fetch('/api/projects');
+      if (res.ok) {
+        this.projects = await res.json();
+        this.populateProjectsDropdown(selectPath);
+        return;
+      }
+    } catch (err) {
+      // In-browser Vercel Web Mode
+    }
+
+    // Activate Zero-Install In-Browser Web Mode
+    this.initWebDemoMode(selectPath);
+  }
+
+  initWebDemoMode(selectPath = null) {
+    this.isWebMode = true;
+    this.projects = Object.values(DEMO_SCENARIOS);
+    this.populateProjectsDropdown(selectPath);
+
+    const badgeText = document.getElementById('bannerBadgeText');
+    if (badgeText) badgeText.textContent = '🌐 Vercel Web Edition (Zero Install)';
+    
+    this.showToast('Running in Zero-Install Web Mode! Safe and 100% In-Browser.', 'info');
+  }
+
+  populateProjectsDropdown(selectPath = null) {
+    this.projectSelect.innerHTML = '';
+    
+    // Group 1: Projects / Scenarios
+    this.projects.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.path;
+      opt.textContent = p.name;
+      this.projectSelect.appendChild(opt);
+    });
+
+    // Separator
+    const divider = document.createElement('option');
+    divider.disabled = true;
+    divider.textContent = '────────── Open Local Project ──────────';
+    this.projectSelect.appendChild(divider);
+
+    // Native Browser Safe Folder Picker
+    const optBrowse = document.createElement('option');
+    optBrowse.value = '__browse__';
+    optBrowse.textContent = '📁 Open Local Folder (Zero Install - Browser API)...';
+    this.projectSelect.appendChild(optBrowse);
+
+    const optManual = document.createElement('option');
+    optManual.value = '__manual__';
+    optManual.textContent = '✏️ Enter Repository Path...';
+    this.projectSelect.appendChild(optManual);
+
+    if (this.projects.length > 0) {
+      const target = selectPath 
+        ? this.projects.find(p => p.path === selectPath) 
+        : (this.activeRepo ? this.projects.find(p => p.path === this.activeRepo.path) || this.projects[0] : this.projects[0]);
+      
+      this.activeRepo = target || this.projects[0];
+      this.projectSelect.value = this.activeRepo.path;
+      this.refreshActiveRepo();
+    }
+  }
+
+  async browseFolderDialog() {
+    sfx.click();
+    // 1. Try Browser Native File System Access API (Zero Install, Zero Virus)
+    if ('showDirectoryPicker' in window) {
+      try {
+        const dirHandle = await window.showDirectoryPicker({ mode: 'read' });
+        
+        let gitDir = null;
+        try {
+          gitDir = await dirHandle.getDirectoryHandle('.git');
+        } catch {
+          this.showToast(`Selected folder "${dirHandle.name}" does not contain a .git directory.`, 'warn');
+          return;
         }
 
-        const card = document.createElement('div');
-        card.className = `commit-node-card ${c.isHead ? 'is-head' : ''} ${this.selectedCommit === c.hash ? 'selected' : ''}`;
-        card.innerHTML = `
-          <div class="node-card-top">
-            <span class="node-hash">${c.hash}</span>
-            ${c.isHead ? '<span class="node-tag-head">HEAD</span>' : ''}
+        let branch = 'main';
+        try {
+          const headHandle = await gitDir.getFileHandle('HEAD');
+          const headFile = await headHandle.getFile();
+          const headText = await headFile.text();
+          if (headText.startsWith('ref: refs/heads/')) {
+            branch = headText.replace('ref: refs/heads/', '').trim();
+          }
+        } catch {}
+
+        const browserRepo = {
+          name: `${dirHandle.name} (Local Browser Folder)`,
+          path: `browser://${dirHandle.name}`,
+          isWebFolder: true,
+          dirHandle: dirHandle,
+          gitDirHandle: gitDir,
+          branch: branch
+        };
+
+        this.projects.unshift(browserRepo);
+        this.populateProjectsDropdown(browserRepo.path);
+        this.showToast(`Connected to local folder: ${dirHandle.name} (100% In-Browser & Private)`, 'success');
+        return;
+      } catch (err) {
+        if (err.name === 'AbortError') return; // User closed picker
+      }
+    }
+
+    // 2. Fallback to in-app explorer if local backend is available
+    this.openExplorer(this.activeRepo ? this.activeRepo.path : null);
+  }
+
+  async launchOsFolderDialog() {
+    sfx.click();
+    this.showToast('Launching Windows folder dialog...', 'info');
+    try {
+      const res = await fetch('/api/browse-folder');
+      const data = await res.json();
+      if (data.selected) {
+        if (data.isGit) {
+          sfx.success();
+          if (this.modalOpenPath) this.modalOpenPath.close();
+          await this.loadProjects(data.path);
+          this.showToast(`Opened repository: ${data.name}`, 'success');
+        } else {
+          sfx.error();
+          this.showToast(`Selected folder is not a Git repo: ${data.path}`, 'warn');
+          this.openExplorer(data.path);
+        }
+      }
+    } catch (err) {
+      this.showToast('OS dialog failed: ' + err.message, 'danger');
+    }
+  }
+
+  async openExplorer(path = null) {
+    if (this.modalOpenPath && !this.modalOpenPath.open) {
+      this.modalOpenPath.showModal();
+    }
+    this.explorerFoldersContainer.innerHTML = `<div class="explorer-loading-state">Scanning directory on disk...</div>`;
+
+    try {
+      const target = path ? `?path=${encodeURIComponent(path)}` : '';
+      const res = await fetch(`/api/explore-dir${target}`);
+      const data = await res.json();
+      this.currentExplorerData = data;
+      this.renderExplorerView(data);
+    } catch (err) {
+      this.explorerFoldersContainer.innerHTML = `
+        <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 1.25rem; margin: 0.5rem 0;">
+          <div style="font-weight: 700; color: #f87171; margin-bottom: 6px; font-size: 0.92rem;">⚠️ Cannot connect to Git Surgery backend (127.0.0.1:4321)</div>
+          <div style="color: var(--text-secondary); font-size: 0.8rem; line-height: 1.6;">
+            The local Git backend daemon is not responding.<br>
+            • Please ensure <code style="background: #000; padding: 2px 6px; border-radius: 4px; color: var(--brand-cyan); font-family: var(--font-mono);">python server.py</code> is running.<br>
+            • Or open directly via: <a href="http://localhost:4321" target="_blank" style="color: var(--brand-cyan); text-decoration: underline; font-weight: 700;">http://localhost:4321</a>
           </div>
-          <div class="node-msg">${c.msg}</div>
-          <div class="node-card-footer">
-            <span class="node-author">
-              <span class="author-dot"></span>
-              ${c.author}
-            </span>
-            <span>${c.time}</span>
+          <button id="btnRetryExplorer" class="btn btn-action btn-sm" style="margin-top: 12px;">🔄 Retry Connection</button>
+        </div>
+      `;
+      const btnRetry = document.getElementById('btnRetryExplorer');
+      if (btnRetry) btnRetry.addEventListener('click', () => this.openExplorer(path));
+    }
+  }
+
+  renderExplorerView(data) {
+    if (data.error) {
+      this.explorerFoldersContainer.innerHTML = `<div style="color: #f87171; padding: 1rem;">Error: ${data.error}</div>`;
+      return;
+    }
+
+    // Drives Bar
+    if (this.explorerDrivesBar) {
+      this.explorerDrivesBar.innerHTML = `<span class="explorer-section-label">DRIVES:</span>`;
+      ['C:\\', 'D:\\'].forEach(d => {
+        const btn = document.createElement('button');
+        btn.className = `drive-pill ${data.currentPath && data.currentPath.toUpperCase().startsWith(d.toUpperCase()) ? 'active' : ''}`;
+        btn.textContent = d;
+        btn.addEventListener('click', () => {
+          sfx.click();
+          this.openExplorer(d);
+        });
+        this.explorerDrivesBar.appendChild(btn);
+      });
+    }
+
+    // Breadcrumbs
+    if (this.explorerBreadcrumbBar) {
+      this.explorerBreadcrumbBar.innerHTML = '';
+      const rootSpan = document.createElement('span');
+      rootSpan.className = 'breadcrumb-item';
+      rootSpan.textContent = '💻 Computer';
+      rootSpan.addEventListener('click', () => this.openExplorer('roots'));
+      this.explorerBreadcrumbBar.appendChild(rootSpan);
+
+      if (data.currentPath) {
+        const parts = data.currentPath.split(/\\|\//).filter(Boolean);
+        let accumulated = '';
+        parts.forEach((p, idx) => {
+          const sep = document.createElement('span');
+          sep.className = 'breadcrumb-sep';
+          sep.textContent = '>';
+          this.explorerBreadcrumbBar.appendChild(sep);
+
+          accumulated = idx === 0 ? (p.includes(':') ? p + '\\' : '/' + p) : (accumulated.endsWith('\\') ? accumulated + p : accumulated + '\\' + p);
+          const currentAcc = accumulated;
+
+          const item = document.createElement('span');
+          item.className = 'breadcrumb-item';
+          item.textContent = p;
+          item.addEventListener('click', () => {
+            sfx.click();
+            this.openExplorer(currentAcc);
+          });
+          this.explorerBreadcrumbBar.appendChild(item);
+        });
+      }
+    }
+
+    // Set input placeholder to current path
+    if (this.customRepoPathInput && data.currentPath) {
+      this.customRepoPathInput.value = data.currentPath;
+    }
+
+    // Folder Cards
+    this.explorerFoldersContainer.innerHTML = '';
+
+    // If parent exists, add Up option
+    if (data.parentPath) {
+      const upCard = document.createElement('div');
+      upCard.className = 'folder-card';
+      upCard.innerHTML = `
+        <div class="folder-card-left">
+          <span>⬆️</span>
+          <span class="folder-name">.. (Up to Parent)</span>
+        </div>
+      `;
+      upCard.addEventListener('click', () => {
+        sfx.click();
+        this.openExplorer(data.parentPath);
+      });
+      this.explorerFoldersContainer.appendChild(upCard);
+    }
+
+    if (!data.entries || data.entries.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'empty-state-hint';
+      empty.textContent = 'No subdirectories found in this folder.';
+      this.explorerFoldersContainer.appendChild(empty);
+      return;
+    }
+
+    data.entries.forEach(item => {
+      const card = document.createElement('div');
+      card.className = `folder-card ${item.isGit ? 'is-git-repo' : ''}`;
+      card.dataset.name = item.name.toLowerCase();
+
+      card.innerHTML = `
+        <div class="folder-card-left">
+          <span>${item.isGit ? '📦' : '📁'}</span>
+          <span class="folder-name" title="${item.path}">${this.escapeHtml(item.name)}</span>
+        </div>
+        <div>
+          ${item.isGit ? '<span class="git-badge-sm">GIT REPO</span>' : ''}
+        </div>
+      `;
+
+      card.addEventListener('click', async (e) => {
+        sfx.click();
+        if (item.isGit) {
+          // Open directly!
+          if (this.modalOpenPath) this.modalOpenPath.close();
+          await this.openCustomPath(item.path);
+        } else {
+          // Navigate deeper
+          this.openExplorer(item.path);
+        }
+      });
+
+      this.explorerFoldersContainer.appendChild(card);
+    });
+  }
+
+  filterExplorerFolders() {
+    const q = (this.explorerFilterInput?.value || '').toLowerCase().trim();
+    const cards = this.explorerFoldersContainer.querySelectorAll('.folder-card');
+    cards.forEach(c => {
+      if (!q || c.textContent.toLowerCase().includes(q)) {
+        c.style.display = 'flex';
+      } else {
+        c.style.display = 'none';
+      }
+    });
+  }
+
+  async openCustomPath(pathStr) {
+    const cleanPath = (pathStr || '').trim();
+    if (!cleanPath) {
+      this.showToast('Please enter a valid folder path', 'warn');
+      return;
+    }
+    sfx.click();
+    try {
+      const res = await fetch('/api/open-path', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: cleanPath })
+      });
+      const data = await res.json();
+      if (data.success) {
+        sfx.success();
+        if (this.modalOpenPath) this.modalOpenPath.close();
+        if (this.customRepoPathInput) this.customRepoPathInput.value = '';
+        await this.loadProjects(data.path);
+        this.showToast(`Successfully opened "${data.name}"`, 'success');
+      } else {
+        sfx.error();
+        this.showToast(data.error || 'Failed to open repository', 'danger');
+      }
+    } catch (err) {
+      sfx.error();
+      this.showToast('Network error: ' + err.message, 'danger');
+    }
+  }
+
+  async refreshActiveRepo() {
+    if (!this.activeRepo) return;
+    this.bannerRepoName.textContent = this.activeRepo.name;
+
+    // Handle interactive Demo Scenario on Vercel
+    if (this.activeRepo.isDemo) {
+      const scenario = DEMO_SCENARIOS[this.activeRepo.path] || Object.values(DEMO_SCENARIOS)[0];
+      this.currentStatus = scenario.status;
+      this.updateStatusUI(this.currentStatus);
+      this.renderStagingUI(this.currentStatus);
+      this.renderLiveCommits(scenario.commits || []);
+      
+      if (scenario.conflict) {
+        this.activeConflictData = {
+          filePath: scenario.conflict.filePath,
+          conflict: scenario.conflict
+        };
+        this.checkAndDisplayConflict(scenario.conflict.filePath);
+      }
+
+      this.analyzeIntent(this.copilotQueryInput ? this.copilotQueryInput.value : '');
+      return;
+    }
+
+    // Handle Local Browser Folder via showDirectoryPicker
+    if (this.activeRepo.isWebFolder) {
+      this.currentStatus = {
+        branch: this.activeRepo.branch || 'main',
+        isClean: true,
+        stagedCount: 0,
+        unstagedCount: 0,
+        untrackedCount: 0,
+        stagedFiles: [],
+        unstagedFiles: [],
+        untrackedFiles: [],
+        conflictedFiles: [],
+        ahead: 0,
+        behind: 0
+      };
+      this.updateStatusUI(this.currentStatus);
+      this.renderStagingUI(this.currentStatus);
+      this.renderLiveCommits([
+        { id: 'h1', hash: 'head01', author: 'Local User', time: 'Active', msg: `Working tree on ${this.activeRepo.branch || 'main'}`, parents: [] }
+      ]);
+      this.analyzeIntent(this.copilotQueryInput ? this.copilotQueryInput.value : '');
+      return;
+    }
+
+    try {
+      // 1. Status
+      const statusRes = await fetch(`/api/status?path=${encodeURIComponent(this.activeRepo.path)}`);
+      if (statusRes.ok) {
+        this.currentStatus = await statusRes.json();
+        this.updateStatusUI(this.currentStatus);
+        this.renderStagingUI(this.currentStatus);
+      }
+
+      // 2. Commits
+      const commitsRes = await fetch(`/api/commits?path=${encodeURIComponent(this.activeRepo.path)}`);
+      if (commitsRes.ok) {
+        const commits = await commitsRes.json();
+        this.renderLiveCommits(commits);
+      }
+
+      // 3. Proactively diagnose repository condition with Copilot
+      this.analyzeIntent(this.copilotQueryInput ? this.copilotQueryInput.value : '');
+    } catch (err) {
+      this.showToast('Error syncing repo: ' + err.message, 'danger');
+    }
+  }
+
+  updateStatusUI(status) {
+    this.currentBranchName.textContent = status.branch;
+
+    const uncommittedTotal = status.stagedCount + status.unstagedCount + status.untrackedCount;
+    if (this.stagingTabBadge) {
+      this.stagingTabBadge.textContent = uncommittedTotal;
+    }
+
+    if (status.conflictedFiles && status.conflictedFiles.length > 0) {
+      this.syncStatusTag.textContent = `${status.conflictedFiles.length} CONFLICTS!`;
+      this.syncStatusTag.style.color = '#f87171';
+      this.checkAndDisplayConflict(status.conflictedFiles[0]);
+    } else if (!status.isClean) {
+      this.syncStatusTag.textContent = `${uncommittedTotal} uncommitted`;
+      this.syncStatusTag.style.color = '#fbbf24';
+      this.conflictCard.classList.add('hidden');
+    } else {
+      this.syncStatusTag.textContent = 'Clean';
+      this.syncStatusTag.style.color = '#34d399';
+      this.conflictCard.classList.add('hidden');
+    }
+
+    this.bannerHeading.textContent = `Active: ${this.activeRepo.name} (${status.branch})`;
+    this.bannerSubheading.textContent = `Uncommitted: ${status.unstagedCount} modified, ${status.stagedCount} staged, ${status.untrackedCount} untracked.`;
+  }
+
+  renderStagingUI(status) {
+    if (!this.unstagedFileList || !this.stagedFileList) return;
+
+    // Unstaged Files
+    const unstagedList = [...(status.unstagedFiles || []), ...(status.untrackedFiles || [])];
+    if (this.unstagedCountLabel) this.unstagedCountLabel.textContent = `${unstagedList.length} files`;
+    this.unstagedFileList.innerHTML = '';
+
+    if (unstagedList.length === 0) {
+      this.unstagedFileList.innerHTML = `<div class="empty-state-hint">Workspace is clean. No uncommitted modifications.</div>`;
+    } else {
+      unstagedList.forEach(file => {
+        const isUntracked = (status.untrackedFiles || []).includes(file);
+        const row = document.createElement('div');
+        row.className = 'file-card-row';
+        row.innerHTML = `
+          <div class="file-card-left">
+            <span class="file-status-pill ${isUntracked ? 'status-U' : 'status-M'}">${isUntracked ? 'NEW' : 'MOD'}</span>
+            <span class="file-path-text" title="${file}">${this.escapeHtml(file)}</span>
+          </div>
+          <div class="file-card-actions">
+            <button class="btn-file-icon" data-act="diff" title="View visual diff">👁️ Diff</button>
+            <button class="btn-file-icon" data-act="stage" title="Stage file">+ Stage</button>
+            <button class="btn-file-icon danger" data-act="discard" title="Discard changes">✕</button>
           </div>
         `;
 
-        card.addEventListener('click', () => {
-          sfx.click();
-          this.selectedCommit = c.hash;
-          this.renderSwimlane();
-          this.showToast(`Selected commit ${c.hash}: "${c.msg}"`, 'info');
+        row.querySelector('[data-act="stage"]').addEventListener('click', () => {
+          this.executeFileAction('stage', file);
         });
 
-        chain.appendChild(card);
-      });
+        row.querySelector('[data-act="diff"]').addEventListener('click', () => {
+          this.openDiffViewer(file, null, `Diff: ${file}`);
+        });
 
-      laneRow.appendChild(chain);
-      this.swimlaneTracks.appendChild(laneRow);
+        row.querySelector('[data-act="discard"]').addEventListener('click', () => {
+          if (confirm(`Discard all local modifications in "${file}"? This cannot be undone.`)) {
+            this.executeFileAction('discard', file);
+          }
+        });
+
+        this.unstagedFileList.appendChild(row);
+      });
+    }
+
+    // Staged Files
+    const stagedList = status.stagedFiles || [];
+    if (this.stagedCountLabel) this.stagedCountLabel.textContent = `${stagedList.length} files`;
+    this.stagedFileList.innerHTML = '';
+
+    if (stagedList.length === 0) {
+      this.stagedFileList.innerHTML = `<div class="empty-state-hint">No files staged for commit yet.</div>`;
+    } else {
+      stagedList.forEach(file => {
+        const row = document.createElement('div');
+        row.className = 'file-card-row';
+        row.innerHTML = `
+          <div class="file-card-left">
+            <span class="file-status-pill status-A">STAGED</span>
+            <span class="file-path-text" title="${file}">${this.escapeHtml(file)}</span>
+          </div>
+          <div class="file-card-actions">
+            <button class="btn-file-icon" data-act="diff" title="View visual diff">👁️ Diff</button>
+            <button class="btn-file-icon" data-act="unstage" title="Unstage file">- Unstage</button>
+          </div>
+        `;
+
+        row.querySelector('[data-act="unstage"]').addEventListener('click', () => {
+          this.executeFileAction('unstage', file);
+        });
+
+        row.querySelector('[data-act="diff"]').addEventListener('click', () => {
+          this.openDiffViewer(file, null, `Staged Diff: ${file}`);
+        });
+
+        this.stagedFileList.appendChild(row);
+      });
+    }
+  }
+
+  async executeFileAction(action, filePath = null) {
+    if (!this.activeRepo) return;
+    sfx.click();
+
+    try {
+      const res = await fetch('/api/file-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          repoPath: this.activeRepo.path,
+          action: action,
+          filePath: filePath
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        sfx.commit();
+        this.showToast(`Action ${action} completed`, 'success');
+        this.refreshActiveRepo();
+      } else {
+        sfx.error();
+        this.showToast(`Action failed: ${data.stderr || data.error}`, 'danger');
+      }
+    } catch (err) {
+      this.showToast(err.message, 'danger');
+    }
+  }
+
+  async commitStagingChanges(stageAllFirst = false) {
+    if (!this.activeRepo) return;
+    const msg = this.composerCommitMsg.value.trim();
+    const isAmend = this.checkAmendCommit.checked;
+
+    if (!msg && !isAmend) {
+      this.showToast('Please type a commit message first', 'warn');
+      this.composerCommitMsg.focus();
+      return;
+    }
+
+    sfx.click();
+    let cmd = '';
+    if (stageAllFirst) {
+      cmd = isAmend ? `git add -A && git commit --amend -m "${msg || 'amend'}"` : `git add -A && git commit -m "${msg}"`;
+    } else {
+      cmd = isAmend ? `git commit --amend -m "${msg || 'amend'}"` : `git commit -m "${msg}"`;
+    }
+
+    this.composerCommitMsg.value = '';
+    this.checkAmendCommit.checked = false;
+    await this.executeGitCommand(cmd);
+  }
+
+  // ==========================================================================
+  // Branches Management
+  // ==========================================================================
+  async loadBranches() {
+    if (!this.activeRepo) return;
+    try {
+      const res = await fetch(`/api/branches?path=${encodeURIComponent(this.activeRepo.path)}`);
+      if (res.ok) {
+        const branches = await res.json();
+        this.currentBranchesList = branches;
+        if (this.branchesTabBadge) this.branchesTabBadge.textContent = branches.length;
+        this.renderBranches(branches);
+      }
+    } catch (err) {
+      this.showToast('Could not load branches: ' + err.message, 'danger');
+    }
+  }
+
+  renderBranches(branches) {
+    if (!this.branchesListContainer) return;
+    this.branchesListContainer.innerHTML = '';
+
+    if (!branches || branches.length === 0) {
+      this.branchesListContainer.innerHTML = `<div class="empty-state-hint">No branches found.</div>`;
+      return;
+    }
+
+    branches.forEach(b => {
+      const row = document.createElement('div');
+      row.className = `branch-card-row ${b.isCurrent ? 'current-branch' : ''}`;
+      row.dataset.name = b.name.toLowerCase();
+
+      row.innerHTML = `
+        <div class="branch-name-title">
+          <span>${b.isCurrent ? '●' : '🌿'}</span>
+          <span>${this.escapeHtml(b.name)}</span>
+          ${b.isCurrent ? '<span class="col-badge badge-staged">ACTIVE</span>' : ''}
+          ${b.isRemote ? '<span class="col-badge badge-unstaged">REMOTE</span>' : ''}
+        </div>
+        <div class="branch-actions-group">
+          ${!b.isCurrent ? `<button class="btn btn-secondary btn-sm" data-act="checkout">Switch</button>` : ''}
+          ${!b.isCurrent ? `<button class="btn btn-outline btn-sm" data-act="merge" title="Merge ${b.name} into current branch">Merge</button>` : ''}
+          ${!b.isCurrent && !b.isRemote ? `<button class="btn btn-ghost btn-sm danger" data-act="delete" title="Delete local branch">✕</button>` : ''}
+        </div>
+      `;
+
+      const btnCheckout = row.querySelector('[data-act="checkout"]');
+      if (btnCheckout) {
+        btnCheckout.addEventListener('click', () => this.executeBranchAction('checkout', b.name));
+      }
+
+      const btnMerge = row.querySelector('[data-act="merge"]');
+      if (btnMerge) {
+        btnMerge.addEventListener('click', () => {
+          if (confirm(`Merge branch "${b.name}" into current branch "${this.currentStatus?.branch}"?`)) {
+            this.executeBranchAction('merge', b.name);
+          }
+        });
+      }
+
+      const btnDelete = row.querySelector('[data-act="delete"]');
+      if (btnDelete) {
+        btnDelete.addEventListener('click', () => {
+          if (confirm(`Permanently delete branch "${b.name}"?`)) {
+            this.executeBranchAction('delete', b.name);
+          }
+        });
+      }
+
+      this.branchesListContainer.appendChild(row);
     });
   }
 
-  resolveConflict(choice) {
-    sfx.success();
-    const conflict = this.scenarioData.conflict;
-    if (!conflict) return;
+  filterBranches() {
+    const q = (this.branchFilterInput?.value || '').toLowerCase().trim();
+    const rows = this.branchesListContainer.querySelectorAll('.branch-card-row');
+    rows.forEach(r => {
+      if (!q || r.dataset.name.includes(q)) {
+        r.style.display = 'flex';
+      } else {
+        r.style.display = 'none';
+      }
+    });
+  }
+
+  async promptCreateBranch() {
+    const name = prompt('Enter new branch name:');
+    if (name && name.trim()) {
+      await this.executeBranchAction('create', name.trim());
+    }
+  }
+
+  async executeBranchAction(action, branchName) {
+    if (!this.activeRepo) return;
+    sfx.click();
+
+    try {
+      const res = await fetch('/api/branch-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          repoPath: this.activeRepo.path,
+          action: action,
+          branchName: branchName
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        sfx.success();
+        this.showToast(`Branch action "${action}" succeeded!`, 'success');
+        this.refreshActiveRepo();
+        this.loadBranches();
+      } else {
+        sfx.error();
+        this.showToast(`Branch action failed: ${data.stderr || data.error}`, 'danger');
+      }
+    } catch (err) {
+      this.showToast(err.message, 'danger');
+    }
+  }
+
+  // ==========================================================================
+  // Stash Shelf Management
+  // ==========================================================================
+  async loadStashes() {
+    if (!this.activeRepo) return;
+    try {
+      const res = await fetch(`/api/stashes?path=${encodeURIComponent(this.activeRepo.path)}`);
+      if (res.ok) {
+        const stashes = await res.json();
+        if (this.stashesTabBadge) this.stashesTabBadge.textContent = stashes.length;
+        this.renderStashes(stashes);
+      }
+    } catch (err) {
+      this.showToast('Could not load stashes: ' + err.message, 'danger');
+    }
+  }
+
+  renderStashes(stashes) {
+    if (!this.stashesListContainer) return;
+    this.stashesListContainer.innerHTML = '';
+
+    if (!stashes || stashes.length === 0) {
+      this.stashesListContainer.innerHTML = `<div class="empty-state-hint">No saved stashes. Use the input above to stash uncommitted work.</div>`;
+      return;
+    }
+
+    stashes.forEach(s => {
+      const row = document.createElement('div');
+      row.className = 'stash-card-row';
+      row.innerHTML = `
+        <div>
+          <div style="font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700; color: #fff;">${this.escapeHtml(s.ref)}</div>
+          <div style="font-size: 0.76rem; color: var(--text-secondary);">${this.escapeHtml(s.summary)}</div>
+        </div>
+        <div class="stash-actions-group">
+          <button class="btn btn-secondary btn-sm" data-act="apply">Apply</button>
+          <button class="btn btn-action btn-sm" data-act="pop">Pop</button>
+          <button class="btn btn-ghost btn-sm danger" data-act="drop">Drop</button>
+        </div>
+      `;
+
+      row.querySelector('[data-act="apply"]').addEventListener('click', () => this.executeStashAction('apply', s.ref));
+      row.querySelector('[data-act="pop"]').addEventListener('click', () => this.executeStashAction('pop', s.ref));
+      row.querySelector('[data-act="drop"]').addEventListener('click', () => {
+        if (confirm(`Drop ${s.ref}?`)) this.executeStashAction('drop', s.ref);
+      });
+
+      this.stashesListContainer.appendChild(row);
+    });
+  }
+
+  async createStashFromInput() {
+    const msg = this.stashMessageInput?.value.trim();
+    if (this.stashMessageInput) this.stashMessageInput.value = '';
+    await this.executeStashAction('save', msg);
+  }
+
+  async executeStashAction(action, extra = '') {
+    if (!this.activeRepo) return;
+    sfx.click();
+
+    try {
+      const res = await fetch('/api/stash-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          repoPath: this.activeRepo.path,
+          action: action,
+          extra: extra
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        sfx.success();
+        this.showToast(`Stash ${action} completed!`, 'success');
+        this.refreshActiveRepo();
+        this.loadStashes();
+      } else {
+        sfx.error();
+        this.showToast(`Stash error: ${data.stderr || data.error}`, 'danger');
+      }
+    } catch (err) {
+      this.showToast(err.message, 'danger');
+    }
+  }
+
+  // ==========================================================================
+  // Remote Synchronization (Pull, Push, Fetch)
+  // ==========================================================================
+  async executeGitSync(action) {
+    if (!this.activeRepo) return;
+    sfx.click();
+    this.showToast(`Running git ${action}...`, 'info');
+    this.appendTerminalOutput(`git ${action}`, `Syncing with remote repository...`, 'dim');
+
+    try {
+      const res = await fetch('/api/git-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          repoPath: this.activeRepo.path,
+          action: action,
+          branch: this.currentStatus?.branch || 'HEAD'
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        sfx.success();
+        this.appendTerminalOutput(`git ${action}`, data.stdout || `git ${action} completed successfully.`, 'stdout');
+        this.showToast(`git ${action} succeeded!`, 'success');
+        this.refreshActiveRepo();
+      } else {
+        sfx.error();
+        this.appendTerminalOutput(`git ${action}`, data.stderr || 'Command failed or remote not configured.', 'stderr');
+        this.showToast(`git ${action}: ${data.stderr ? data.stderr.split('\n')[0] : 'Non-zero exit'}`, 'warn');
+      }
+    } catch (err) {
+      this.showToast(err.message, 'danger');
+    }
+  }
+
+  // ==========================================================================
+  // Commit Surgery Actions (Cherry-Pick, Revert, Reset)
+  // ==========================================================================
+  async executeCommitSurgery(action, commitHash) {
+    if (!this.activeRepo) return;
+    sfx.click();
+
+    let confirmMsg = '';
+    if (action === 'reset_hard') confirmMsg = `WARNING: Hard reset to ${commitHash} will discard ALL uncommitted work. Proceed?`;
+    if (action === 'reset_soft') confirmMsg = `Soft reset to ${commitHash}? Your code changes will remain safely in working tree.`;
+    if (action === 'revert') confirmMsg = `Revert commit ${commitHash}?`;
+    if (action === 'cherry_pick') confirmMsg = `Cherry-pick commit ${commitHash} onto ${this.currentStatus?.branch}?`;
+
+    if (confirmMsg && !confirm(confirmMsg)) return;
+
+    try {
+      const res = await fetch('/api/commit-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          repoPath: this.activeRepo.path,
+          action: action,
+          hash: commitHash
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        sfx.success();
+        this.showToast(`Operation ${action} succeeded on ${commitHash}`, 'success');
+        this.refreshActiveRepo();
+      } else {
+        sfx.error();
+        this.showToast(`Failed: ${data.stderr || data.error}`, 'danger');
+      }
+    } catch (err) {
+      this.showToast(err.message, 'danger');
+    }
+  }
+
+  renderLiveCommits(commits) {
+    this.swimlaneTracks.innerHTML = '';
+    this.graphStatsHint.textContent = `Loaded ${commits.length} commits from local Git history`;
+
+    if (!commits || commits.length === 0) {
+      this.swimlaneTracks.innerHTML = `<div style="color: var(--text-muted); font-size: 0.8rem; text-align: center; padding: 2rem;">No commits found in this repository yet.</div>`;
+      return;
+    }
+
+    const laneRow = document.createElement('div');
+    laneRow.className = 'branch-lane-row';
+    laneRow.innerHTML = `
+      <div class="lane-label-bar">
+        <span class="lane-name-badge" style="color: var(--brand-cyan);">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="6" y1="3" x2="6" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path></svg>
+          ${this.currentStatus?.branch || 'HEAD'}
+        </span>
+        <span style="font-size: 0.7rem; color: var(--text-muted);">${commits.length} commits</span>
+      </div>
+    `;
+
+    const chain = document.createElement('div');
+    chain.className = 'commit-chain';
+
+    commits.forEach((c, idx) => {
+      if (idx > 0) {
+        const arrow = document.createElement('div');
+        arrow.className = 'node-connector-arrow';
+        arrow.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>`;
+        chain.appendChild(arrow);
+      }
+
+      const card = document.createElement('div');
+      card.className = `commit-node-card ${idx === 0 ? 'is-head' : ''}`;
+      card.innerHTML = `
+        <div class="node-card-top">
+          <span class="node-hash">${c.hash}</span>
+          ${idx === 0 ? '<span class="node-tag-head">HEAD</span>' : ''}
+        </div>
+        <div class="node-msg">${this.escapeHtml(c.msg)}</div>
+        <div class="node-card-footer">
+          <span class="node-author">
+            <span class="author-dot"></span>
+            ${this.escapeHtml(c.author)}
+          </span>
+          <span>${c.time}</span>
+        </div>
+        <div class="commit-node-surgery-bar">
+          <button class="btn-surgery-node" data-action="diff" title="View commit diff">👁️ Diff</button>
+          <button class="btn-surgery-node" data-action="cherry" title="Cherry-pick onto current branch">🍒 Pick</button>
+          <button class="btn-surgery-node" data-action="revert" title="Revert this commit">↩️ Revert</button>
+          <button class="btn-surgery-node" data-action="reset_soft" title="Soft reset to here (keep changes)">⏪ Soft</button>
+          <button class="btn-surgery-node danger" data-action="reset_hard" title="Hard reset to here">💥 Hard</button>
+        </div>
+      `;
+
+      card.querySelector('[data-action="diff"]').addEventListener('click', (e) => {
+        e.stopPropagation();
+        sfx.click();
+        this.openDiffViewer(null, c.id, `Commit ${c.hash}: ${c.msg}`);
+      });
+
+      card.querySelector('[data-action="cherry"]').addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.executeCommitSurgery('cherry_pick', c.hash);
+      });
+
+      card.querySelector('[data-action="revert"]').addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.executeCommitSurgery('revert', c.hash);
+      });
+
+      card.querySelector('[data-action="reset_soft"]').addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.executeCommitSurgery('reset_soft', c.hash);
+      });
+
+      card.querySelector('[data-action="reset_hard"]').addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.executeCommitSurgery('reset_hard', c.hash);
+      });
+
+      card.addEventListener('click', () => {
+        sfx.click();
+        this.openDiffViewer(null, c.id, `Commit ${c.hash}: ${c.msg}`);
+      });
+
+      chain.appendChild(card);
+    });
+
+    laneRow.appendChild(chain);
+    this.swimlaneTracks.appendChild(laneRow);
+  }
+
+  // ==========================================================================
+  // Git Doctor Feature (REA Pattern)
+  // ==========================================================================
+  async openDoctorModal() {
+    if (!this.activeRepo) return;
+    this.doctorChecksList.innerHTML = `<div style="color: var(--text-muted); font-size: 0.8rem;">Scanning repository health...</div>`;
+    this.modalDoctor.showModal();
+
+    try {
+      const res = await fetch(`/api/doctor?path=${encodeURIComponent(this.activeRepo.path)}`);
+      if (res.ok) {
+        const doc = await res.json();
+        this.renderDoctorResults(doc);
+      }
+    } catch (err) {
+      this.doctorChecksList.innerHTML = `<div style="color: #f87171;">Diagnostic failed: ${err.message}</div>`;
+    }
+  }
+
+  renderDoctorResults(doc) {
+    this.doctorScoreBadge.textContent = `Health: ${doc.score}%`;
+    this.doctorScoreBadge.className = `score-badge ${doc.score < 80 ? 'warn' : ''}`;
+    this.doctorChecksList.innerHTML = '';
+
+    doc.checks.forEach(check => {
+      const card = document.createElement('div');
+      card.className = `doctor-check-card ${check.status}`;
+
+      let icon = '✅';
+      if (check.status === 'warn') icon = '⚠️';
+      if (check.status === 'error') icon = '❌';
+      if (check.status === 'info') icon = 'ℹ️';
+
+      card.innerHTML = `
+        <div class="check-left">
+          <span class="check-status-icon">${icon}</span>
+          <div>
+            <div class="check-title">${this.escapeHtml(check.title)}</div>
+            <div class="check-desc">${this.escapeHtml(check.desc)}</div>
+          </div>
+        </div>
+        ${check.repairAction ? `
+          <button class="btn-repair" onclick="window.realGitApp.repairDoctorIssue('${check.repairAction}')">
+            ${check.repairLabel || 'Auto-Fix'}
+          </button>
+        ` : ''}
+      `;
+      this.doctorChecksList.appendChild(card);
+    });
+  }
+
+  async repairDoctorIssue(action) {
+    sfx.click();
+    try {
+      const res = await fetch('/api/doctor-repair', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          repoPath: this.activeRepo.path,
+          action: action
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        sfx.success();
+        this.showToast('Repaired issue successfully!', 'success');
+        this.openDoctorModal();
+        this.refreshActiveRepo();
+      } else {
+        this.showToast('Auto-repair failed: ' + (data.error || 'error'), 'danger');
+      }
+    } catch (err) {
+      this.showToast(err.message, 'danger');
+    }
+  }
+
+  // ==========================================================================
+  // Safety Checkpoints Feature
+  // ==========================================================================
+  async openCheckpointModal() {
+    if (!this.activeRepo) return;
+    this.checkpointNameInput.value = `snapshot-${new Date().toLocaleTimeString().replace(/:/g, '-')}`;
+    this.modalCheckpoint.showModal();
+    this.loadExistingCheckpoints();
+  }
+
+  async loadExistingCheckpoints() {
+    this.checkpointsListContainer.innerHTML = '<div style="color: var(--text-muted); font-size: 0.72rem;">Loading snapshots...</div>';
+    try {
+      const res = await fetch(`/api/checkpoints?path=${encodeURIComponent(this.activeRepo.path)}`);
+      if (res.ok) {
+        const tags = await res.json();
+        this.checkpointsListContainer.innerHTML = '';
+        if (tags.length === 0) {
+          this.checkpointsListContainer.innerHTML = '<div style="color: var(--text-muted); font-size: 0.72rem;">No safety checkpoints recorded yet.</div>';
+          return;
+        }
+
+        tags.forEach(tag => {
+          const row = document.createElement('div');
+          row.className = 'checkpoint-row';
+          row.innerHTML = `
+            <span class="checkpoint-name">${tag}</span>
+            <button class="btn btn-secondary btn-sm" onclick="window.realGitApp.restoreCheckpointTag('${tag}')">
+              Rollback to Snapshot
+            </button>
+          `;
+          this.checkpointsListContainer.appendChild(row);
+        });
+      }
+    } catch {}
+  }
+
+  async createCheckpoint() {
+    const name = this.checkpointNameInput.value.trim() || `checkpoint-${Date.now()}`;
+    sfx.commit();
+
+    try {
+      const res = await fetch('/api/checkpoint', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          repoPath: this.activeRepo.path,
+          name: name
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        sfx.success();
+        this.showToast(`Safety checkpoint "${name}" created!`, 'success');
+        this.loadExistingCheckpoints();
+      } else {
+        this.showToast('Failed to create checkpoint', 'danger');
+      }
+    } catch (err) {
+      this.showToast(err.message, 'danger');
+    }
+  }
+
+  async restoreCheckpointTag(tag) {
+    if (!confirm(`Are you sure you want to rollback to checkpoint "${tag}"? Local uncommitted changes will be replaced with this snapshot.`)) return;
+
+    sfx.click();
+    try {
+      const res = await fetch('/api/restore-checkpoint', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          repoPath: this.activeRepo.path,
+          checkpoint: tag
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        sfx.success();
+        this.modalCheckpoint.close();
+        this.showToast(`Rollback complete! Restored to ${tag}`, 'success');
+        this.refreshActiveRepo();
+      }
+    } catch (err) {
+      this.showToast(err.message, 'danger');
+    }
+  }
+
+  activateTab(tabName) {
+    this.tabBtns.forEach(b => b.classList.toggle('active', b.dataset.tab === tabName));
+    if (this.viewSwimlane) this.viewSwimlane.classList.toggle('hidden', tabName !== 'swimlane');
+    if (this.viewStaging) this.viewStaging.classList.toggle('hidden', tabName !== 'staging');
+    if (this.viewDiff) this.viewDiff.classList.toggle('hidden', tabName !== 'diff');
+    if (this.viewBranches) this.viewBranches.classList.toggle('hidden', tabName !== 'branches');
+    if (this.viewStashes) this.viewStashes.classList.toggle('hidden', tabName !== 'stashes');
+
+    if (tabName === 'branches') this.loadBranches();
+    if (tabName === 'stashes') this.loadStashes();
+  }
+
+  // ==========================================================================
+  // Visual Diff Inspector & Full-Width Preview
+  // ==========================================================================
+  async openDiffViewer(filePath, commitHash, customTitle, openInModal = false) {
+    this.currentDiffTarget = { filePath, commitHash, customTitle };
+    const titleText = customTitle || (filePath ? `Diff for ${filePath}` : `Commit ${commitHash}`);
+
+    if (this.diffModalTitle) this.diffModalTitle.textContent = titleText;
+    if (this.wbDiffTitle) this.wbDiffTitle.textContent = titleText;
+    if (this.diffTabBadge) this.diffTabBadge.textContent = filePath ? filePath.split(/[\/\\]/).pop() : (commitHash ? commitHash.substring(0, 7) : 'Active');
+
+    if (!openInModal) {
+      this.activateTab('diff');
+    }
+
+    if (this.wbDiffEmpty) this.wbDiffEmpty.classList.add('hidden');
+    if (this.wbDiffCodeBox) {
+      this.wbDiffCodeBox.classList.remove('hidden');
+      this.wbDiffCodeBox.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem; padding: 2rem; text-align: center;">Scanning diff with line numbers from Git...</div>';
+    }
+    if (this.diffViewerCodeBox) {
+      this.diffViewerCodeBox.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem; padding: 2rem; text-align: center;">Scanning diff with line numbers from Git...</div>';
+    }
+
+    if (openInModal && this.modalDiff) {
+      this.modalDiff.showModal();
+    }
+
+    try {
+      let url = `/api/diff?path=${encodeURIComponent(this.activeRepo.path)}`;
+      if (filePath) url += `&file=${encodeURIComponent(filePath)}`;
+      if (commitHash) url += `&commit=${encodeURIComponent(commitHash)}`;
+
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        this.currentDiffData = data;
+        this.renderDiffContent(data);
+      }
+    } catch (err) {
+      const errHtml = `<div style="color: #f87171; padding: 1.5rem;">Failed to load diff: ${this.escapeHtml(err.message)}</div>`;
+      if (this.wbDiffCodeBox) this.wbDiffCodeBox.innerHTML = errHtml;
+      if (this.diffViewerCodeBox) this.diffViewerCodeBox.innerHTML = errHtml;
+    }
+  }
+
+  renderDiffContent(data) {
+    const stats = data.stats || { add: 0, del: 0 };
+    [this.wbDiffStatAdd, this.modalDiffStatAdd].forEach(el => {
+      if (el) el.textContent = `+${stats.add}`;
+    });
+    [this.wbDiffStatDel, this.modalDiffStatDel].forEach(el => {
+      if (el) el.textContent = `-${stats.del}`;
+    });
+
+    const lines = data.lines || [];
+    if (lines.length === 0) {
+      const emptyMsg = '<div style="color: var(--text-muted); padding: 3rem; text-align: center; font-size: 0.88rem;">No changes detected for this target in Git working tree.</div>';
+      if (this.wbDiffCodeBox) this.wbDiffCodeBox.innerHTML = emptyMsg;
+      if (this.diffViewerCodeBox) this.diffViewerCodeBox.innerHTML = emptyMsg;
+      return;
+    }
+
+    let html = '';
+    if (this.diffMode === 'split') {
+      html = this.buildSplitDiffHtml(lines);
+    } else {
+      html = this.buildUnifiedDiffHtml(lines);
+    }
+
+    if (this.wbDiffCodeBox) this.wbDiffCodeBox.innerHTML = html;
+    if (this.diffViewerCodeBox) this.diffViewerCodeBox.innerHTML = html;
+  }
+
+  buildUnifiedDiffHtml(lines) {
+    let rows = '';
+    lines.forEach(l => {
+      const oldNum = l.oldLine != null ? l.oldLine : '';
+      const newNum = l.newLine != null ? l.newLine : '';
+      let sign = ' ';
+      if (l.type === 'add') sign = '+';
+      else if (l.type === 'del') sign = '-';
+      else if (l.type === 'chunk') sign = '@';
+
+      rows += `
+        <tr class="diff-row ${l.type}">
+          <td class="diff-cell diff-num-old">${oldNum}</td>
+          <td class="diff-cell diff-num-new">${newNum}</td>
+          <td class="diff-cell diff-sign">${sign}</td>
+          <td class="diff-cell diff-content">${this.escapeHtml(l.text)}</td>
+        </tr>
+      `;
+    });
+
+    return `
+      <table class="diff-table">
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+  }
+
+  buildSplitDiffHtml(lines) {
+    let leftRows = '';
+    let rightRows = '';
+
+    lines.forEach(l => {
+      if (l.type === 'chunk') {
+        leftRows += `<tr class="diff-row chunk"><td class="diff-cell diff-num-old">...</td><td class="diff-cell diff-content">${this.escapeHtml(l.text)}</td></tr>`;
+        rightRows += `<tr class="diff-row chunk"><td class="diff-cell diff-num-new">...</td><td class="diff-cell diff-content">${this.escapeHtml(l.text)}</td></tr>`;
+      } else if (l.type === 'del') {
+        leftRows += `<tr class="diff-row del"><td class="diff-cell diff-num-old">${l.oldLine ?? ''}</td><td class="diff-cell diff-content">${this.escapeHtml(l.text)}</td></tr>`;
+      } else if (l.type === 'add') {
+        rightRows += `<tr class="diff-row add"><td class="diff-cell diff-num-new">${l.newLine ?? ''}</td><td class="diff-cell diff-content">${this.escapeHtml(l.text)}</td></tr>`;
+      } else {
+        leftRows += `<tr class="diff-row context"><td class="diff-cell diff-num-old">${l.oldLine ?? ''}</td><td class="diff-cell diff-content">${this.escapeHtml(l.text)}</td></tr>`;
+        rightRows += `<tr class="diff-row context"><td class="diff-cell diff-num-new">${l.newLine ?? ''}</td><td class="diff-cell diff-content">${this.escapeHtml(l.text)}</td></tr>`;
+      }
+    });
+
+    return `
+      <div class="diff-split-wrapper">
+        <div class="diff-split-column">
+          <div class="diff-split-header">Original / Before</div>
+          <table class="diff-table"><tbody>${leftRows}</tbody></table>
+        </div>
+        <div class="diff-split-column">
+          <div class="diff-split-header">Modified / After</div>
+          <table class="diff-table"><tbody>${rightRows}</tbody></table>
+        </div>
+      </div>
+    `;
+  }
+
+  // ==========================================================================
+  // Reflog Time Machine
+  // ==========================================================================
+  async openReflogTimeMachine() {
+    if (!this.activeRepo) return;
+    this.reflogList.innerHTML = `<div style="color: var(--text-muted); font-size: 0.75rem;">Loading reflog history from disk...</div>`;
+    this.modalReflog.showModal();
+
+    try {
+      const res = await fetch(`/api/reflog?path=${encodeURIComponent(this.activeRepo.path)}`);
+      if (res.ok) {
+        const entries = await res.json();
+        this.renderReflogList(entries);
+      }
+    } catch (err) {
+      this.reflogList.innerHTML = `<div style="color: #f87171;">Failed to load reflog: ${err.message}</div>`;
+    }
+  }
+
+  renderReflogList(entries) {
+    this.reflogList.innerHTML = '';
+    if (!entries || entries.length === 0) {
+      this.reflogList.innerHTML = `<div style="color: var(--text-muted); font-size: 0.75rem;">Reflog is currently empty.</div>`;
+      return;
+    }
+
+    entries.forEach(entry => {
+      const item = document.createElement('div');
+      item.className = 'reflog-item';
+      item.innerHTML = `
+        <div class="reflog-item-left">
+          <span class="reflog-badge">${entry.ref}</span>
+          <span class="node-hash">${entry.hash}</span>
+          <div style="display: flex; flex-direction: column;">
+            <span class="reflog-action-text">${this.escapeHtml(entry.action)}</span>
+            <span class="reflog-time">${entry.time}</span>
+          </div>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="window.realGitApp.restoreToReflog('${entry.hash}', '${entry.ref}')">
+          Restore to Here
+        </button>
+      `;
+      this.reflogList.appendChild(item);
+    });
+  }
+
+  restoreToReflog(hash, refName) {
+    sfx.click();
+    const branchName = prompt(`Create recovery branch from ${refName} (${hash})?\nEnter branch name:`, `rescue-${hash}`);
+    if (!branchName || !branchName.trim()) return;
+
+    this.modalReflog.close();
+    this.executeGitCommand(`git checkout -b ${branchName.trim()} ${hash}`);
+  }
+
+  async executeGitCommand(command) {
+    if (!this.activeRepo) return;
+    sfx.click();
+    this.appendTerminalOutput(command, 'Running...', 'dim');
+
+    try {
+      const res = await fetch('/api/exec', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          repoPath: this.activeRepo.path,
+          command: command
+        })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        sfx.commit();
+        this.appendTerminalOutput(command, data.stdout || '(command finished with zero output)', 'stdout');
+      } else {
+        sfx.error();
+        this.appendTerminalOutput(command, data.stderr || data.stdout || 'Command exited with error.', 'stderr');
+      }
+
+      this.refreshActiveRepo();
+    } catch (err) {
+      sfx.error();
+      this.appendTerminalOutput(command, err.message, 'stderr');
+    }
+  }
+
+  appendTerminalOutput(cmd, output, type = 'stdout') {
+    const entry = document.createElement('div');
+    entry.className = 'term-entry';
+
+    const cmdLine = document.createElement('div');
+    cmdLine.className = 'term-cmd-line';
+    cmdLine.textContent = `$ ${cmd}`;
+
+    const outLine = document.createElement('div');
+    outLine.className = type === 'stdout' ? 'term-stdout' : (type === 'stderr' ? 'term-stderr' : 'term-dim');
+    outLine.textContent = output;
+
+    entry.appendChild(cmdLine);
+    entry.appendChild(outLine);
+    this.terminalOutput.appendChild(entry);
+    this.terminalOutput.scrollTop = this.terminalOutput.scrollHeight;
+  }
+
+  async checkAndDisplayConflict(filePath) {
+    try {
+      const res = await fetch(`/api/conflict?path=${encodeURIComponent(this.activeRepo.path)}&file=${encodeURIComponent(filePath)}`);
+      if (res.ok) {
+        const conflict = await res.json();
+        if (conflict && !conflict.error) {
+          this.conflictCard.classList.remove('hidden');
+          this.conflictFileName.textContent = `Conflict in ${filePath}`;
+          this.codeCurrent.textContent = conflict.currentCode || '// (empty in HEAD)';
+          this.codeIncoming.textContent = conflict.incomingCode || '// (empty in incoming)';
+          this.activeConflictData = { filePath, conflict };
+        }
+      }
+    } catch {}
+  }
+
+  async resolveActiveConflict(choice) {
+    if (!this.activeConflictData) return;
+    const { filePath, conflict } = this.activeConflictData;
 
     let code = '';
-    let explanation = '';
-    if (choice === 'current') {
-      code = conflict.currentCode;
-      explanation = 'Kept your branch\'s JWT cryptographic logic only.';
-    } else if (choice === 'incoming') {
-      code = conflict.incomingCode;
-      explanation = 'Accepted teammate\'s Redis cache lookup only.';
-    } else {
-      code = conflict.bothCode;
-      explanation = 'Combined: Redis cache first, with JWT cryptographic fallback.';
-    }
+    if (choice === 'current') code = conflict.currentCode;
+    else if (choice === 'incoming') code = conflict.incomingCode;
+    else code = conflict.currentCode + '\n' + conflict.incomingCode;
 
-    // Hide choices, show resolved block
-    this.diffContainer.classList.add('hidden');
-    this.smartCombineBox.classList.add('hidden');
-    this.resolvedResultBox.classList.remove('hidden');
-    this.resolvedCodePreview.textContent = code;
-
-    this.statusPill.className = 'status-pill status-resolved';
-    this.statusPill.textContent = 'Conflict Resolved ✓';
-
-    this.situationBanner.classList.add('resolved');
-    this.bannerBadgeText.textContent = '✓ Merge Successful';
-    this.bannerHeading.textContent = `All conflicts in src/auth.ts are cleanly resolved (${explanation})`;
-    this.bannerSubheading.textContent = 'The merge commit has been created and your working tree is 100% clean!';
-
-    // Inject Merge Commit into swimlane
-    const featureLane = this.scenarioData.lanes.find(l => l.name === 'feature/auth');
-    if (featureLane) {
-      featureLane.commits.forEach(c => c.isHead = false);
-      featureLane.commits.push({
-        hash: 'm3rg3d1',
-        msg: `Merge branch 'main' into feature/auth (${explanation})`,
-        author: 'You',
-        time: 'just now',
-        isHead: true
+    sfx.success();
+    try {
+      const res = await fetch('/api/resolve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          repoPath: this.activeRepo.path,
+          filePath: filePath,
+          code: code
+        })
       });
-      this.renderSwimlane();
-    }
 
-    // Update Terminal Flow
-    this.renderTerminalCommands([
-      { step: 1, cmd: 'git add src/auth.ts', note: 'Notifies Git the conflict is solved.' },
-      { step: 2, cmd: `git commit -m "Merge branch 'main' (${explanation})"`, note: 'Creates the clean merge commit.' },
-      { step: 3, cmd: 'git status', note: 'nothing to commit, working tree clean!' }
-    ]);
-
-    this.showToast('Conflict solved! Merge commit created.', 'success');
-  }
-
-  renderRebaseStepper() {
-    this.rebaseStepperList.innerHTML = '';
-    const items = this.scenarioData.squashItems || [];
-
-    items.forEach(item => {
-      const row = document.createElement('div');
-      row.className = 'rebase-step-card';
-      row.innerHTML = `
-        <div class="rebase-step-left">
-          <span class="rebase-badge ${item.action === 'pick' ? 'badge-pick' : 'badge-squash'}">${item.action}</span>
-          <span class="node-hash">${item.hash}</span>
-          <span class="rebase-step-msg">${item.msg}</span>
-        </div>
-        <span style="font-size: 0.7rem; color: var(--text-muted);">${item.action === 'pick' ? 'Base Commit' : 'Folds into base'}</span>
-      `;
-      this.rebaseStepperList.appendChild(row);
-    });
-  }
-
-  executeSquash() {
-    sfx.success();
-    const lane = this.scenarioData.lanes.find(l => l.name === 'feature/payment');
-    if (lane) {
-      lane.commits = [
-        {
-          hash: 'sq99999',
-          msg: 'feat(payment): integrate Stripe checkout with webhooks (squashed PR)',
-          author: 'You',
-          time: 'just now',
-          isHead: true
-        }
-      ];
-      this.renderSwimlane();
-    }
-
-    this.situationBanner.classList.add('resolved');
-    this.bannerBadgeText.textContent = '✓ Squashed Cleanly';
-    this.bannerHeading.textContent = '4 WIP commits squashed into 1 clean atomic commit!';
-    this.bannerSubheading.textContent = 'Ready to open your GitHub Pull Request with a professional history.';
-
-    this.renderTerminalCommands([
-      { step: 1, cmd: 'git checkout feature/payment', note: 'Switch to feature branch.' },
-      { step: 2, cmd: 'git reset --soft main', note: 'Folds intermediate history while keeping all code in staging.' },
-      { step: 3, cmd: 'git commit -m "feat(payment): integrate Stripe checkout with webhooks"', note: 'Atomic single commit ready for PR.' },
-      { step: 4, cmd: 'git push --force-with-lease origin feature/payment', note: 'Pushes cleanly to remote.' }
-    ]);
-
-    this.showToast('4 commits squashed into 1 atomic PR commit!', 'success');
-  }
-
-  fixAccidentalMain() {
-    sfx.success();
-    const mainLane = this.scenarioData.lanes.find(l => l.name === 'main');
-    if (mainLane) {
-      const movedCommit = mainLane.commits.pop();
-      mainLane.commits[mainLane.commits.length - 1].isHead = true;
-
-      this.scenarioData.lanes.push({
-        name: 'feature/websocket-streaming',
-        color: '#f43f5e',
-        commits: [
-          { ...movedCommit, isHead: true }
-        ]
-      });
-      this.renderSwimlane();
-    }
-
-    this.situationBanner.classList.add('resolved');
-    this.bannerBadgeText.textContent = '✓ Rescue Successful';
-    this.bannerHeading.textContent = 'Commit moved to feature/websocket-streaming & main rewound cleanly!';
-    this.bannerSubheading.textContent = 'Main branch is now 100% untouched and matches production.';
-
-    this.renderTerminalCommands([
-      { step: 1, cmd: 'git branch feature/websocket-streaming', note: 'Creates branch with your commit.' },
-      { step: 2, cmd: 'git reset --hard HEAD~1', note: 'Rewinds main back 1 commit safely.' },
-      { step: 3, cmd: 'git checkout feature/websocket-streaming', note: 'Continue working happily on your feature!' }
-    ]);
-
-    this.showToast('Main restored & feature branch created!', 'success');
-  }
-
-  executeReflogRescue() {
-    sfx.success();
-    this.scenarioData.lanes = [
-      {
-        name: 'main',
-        color: '#38bdf8',
-        commits: [
-          { hash: '7770001', msg: 'Stable commit before dangerous reset', author: 'You', time: '1h ago' }
-        ]
-      },
-      {
-        name: 'rescue-branch (restored!)',
-        color: '#10b981',
-        commits: [
-          { hash: '7770001', msg: 'Stable commit before dangerous reset', author: 'You', time: '1h ago' },
-          { hash: '7770002', msg: '✨ Rescued: cryptographic key generator', author: 'You', time: 'just now', isHead: true }
-        ]
+      const data = await res.json();
+      if (data.success) {
+        this.showToast(`Conflict in ${filePath} resolved and staged!`, 'success');
+        this.conflictCard.classList.add('hidden');
+        this.refreshActiveRepo();
+      } else {
+        this.showToast('Failed to resolve: ' + data.error, 'danger');
       }
-    ];
-    this.renderSwimlane();
-
-    this.situationBanner.classList.add('resolved');
-    this.bannerBadgeText.textContent = '✓ Lost Commit Rescued';
-    this.bannerHeading.textContent = 'Reflog successfully restored commit 7770002!';
-    this.bannerSubheading.textContent = 'Branch rescue-branch created with all your cryptographic key work intact.';
-
-    this.renderTerminalCommands([
-      { step: 1, cmd: 'git reflog', note: 'Found orphaned commit 7770002 at HEAD@{1}.' },
-      { step: 2, cmd: 'git branch rescue-branch 7770002', note: 'Spawns branch directly on the lost commit.' },
-      { step: 3, cmd: 'git checkout rescue-branch', note: 'Work recovered! Zero data loss.' }
-    ]);
-
-    this.showToast('Reflog rescue completed with zero data loss!', 'success');
-  }
-
-  injectCommit() {
-    const msg = this.inputCommitMsg.value.trim();
-    if (!msg) return;
-    sfx.commit();
-
-    const targetLane = this.scenarioData.lanes[this.scenarioData.lanes.length - 1];
-    targetLane.commits.forEach(c => c.isHead = false);
-
-    const hash = 'c_' + Math.random().toString(16).substr(2, 6);
-    targetLane.commits.push({
-      hash,
-      msg,
-      author: 'You',
-      time: 'just now',
-      isHead: true
-    });
-
-    this.renderSwimlane();
-    this.showToast(`Injected commit ${hash}!`, 'success');
-  }
-
-  injectBranch() {
-    sfx.commit();
-    const branchName = `experiment/vibe-${Math.floor(Math.random() * 100)}`;
-    const mainLane = this.scenarioData.lanes[0];
-    const baseCommit = mainLane.commits[mainLane.commits.length - 1];
-
-    this.scenarioData.lanes.push({
-      name: branchName,
-      color: '#a855f7',
-      commits: [
-        {
-          hash: 'br_' + Math.random().toString(16).substr(2, 6),
-          msg: `Spawned ${branchName}`,
-          author: 'You',
-          time: 'just now',
-          isHead: true
-        }
-      ]
-    });
-
-    this.renderSwimlane();
-    this.showToast(`Spawned branch ${branchName}!`, 'success');
-  }
-
-  renderTerminalCommands(commands) {
-    this.terminalFlow.innerHTML = '';
-    commands.forEach(c => {
-      const row = document.createElement('div');
-      row.className = 'command-row';
-      row.innerHTML = `
-        <span class="step-circle">${c.step}</span>
-        <div class="command-details">
-          <span class="command-bash">$ ${c.cmd}</span>
-          <span class="command-explain">${c.note}</span>
-        </div>
-      `;
-      this.terminalFlow.appendChild(row);
-    });
-  }
-
-  copyCommands() {
-    const lines = Array.from(this.terminalFlow.querySelectorAll('.command-bash'))
-      .map(el => el.textContent.replace('$ ', ''))
-      .join('\n');
-
-    navigator.clipboard.writeText(lines).then(() => {
-      sfx.click();
-      this.showToast('Copied safe command sequence to clipboard!', 'success');
-    }).catch(() => {
-      this.showToast('Failed to copy to clipboard', 'warn');
-    });
+    } catch (err) {
+      this.showToast('Resolution error: ' + err.message, 'danger');
+    }
   }
 
   showToast(msg, type = 'info') {
@@ -698,9 +3132,14 @@ class GitSurgeryApp {
       setTimeout(() => toast.remove(), 250);
     }, 2800);
   }
+
+  escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
 }
 
-// Global App Initialization
+// Launch
 window.addEventListener('DOMContentLoaded', () => {
-  window.gitApp = new GitSurgeryApp();
+  window.realGitApp = new RealGitApp();
 });

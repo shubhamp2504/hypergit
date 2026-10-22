@@ -3,21 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Git Surgery — Interactive Git Visualizer & Conflict Solver</title>
-  <meta name="description" content="A crystal-clear, beautifully modern interactive Git visualizer and conflict solver. Understand merges, rebases, and reflog in seconds.">
+  <title>Git Surgery — Advanced Real-Time Git Control & Doctor</title>
+  <meta name="description" content="All Git surgery tools—Squash, Undo, Move Commits, Reflog Time Machine, 3-Way Conflict Resolver, and REA-inspired Git Doctor—working live on any real repository.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="index.css">
 </head>
 <body>
 
-  <!-- App Header -->
+  <!-- Top Navigation & Repository Selector -->
   <header class="navbar" id="navbar">
     <div class="nav-left">
       <div class="logo">
         <div class="logo-gem">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2">
             <circle cx="18" cy="18" r="3"></circle>
             <circle cx="6" cy="6" r="3"></circle>
             <path d="M6 9v12"></path>
@@ -26,280 +26,859 @@
         </div>
         <div class="logo-text">
           <span class="logo-title">Git Surgery</span>
-          <span class="logo-tag">Visual Playground</span>
+          <span class="logo-tag">Advanced Real-Time Control</span>
         </div>
       </div>
 
-      <!-- Quick Mission Picker -->
-      <nav class="mission-nav" aria-label="Scenarios">
-        <button class="mission-tab active" data-scenario="rebase-conflict" id="tabRebaseConflict">
-          <span class="tab-dot dot-warn"></span>
-          <span>1. Merge Conflict</span>
+      <!-- Active Project Dropdown & Browse Options -->
+      <div class="project-selector-wrapper">
+        <span class="selector-label">PROJECT:</span>
+        <select id="projectSelect" class="project-dropdown" aria-label="Select Git Repository">
+          <option value="" disabled selected>Loading local repositories...</option>
+        </select>
+        <button id="btnBrowseFolder" class="browse-btn" title="Open OS Folder Dialog to Browse Any Repository">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          Browse...
         </button>
-        <button class="mission-tab" data-scenario="accidental-main" id="tabAccidentalMain">
-          <span class="tab-dot dot-danger"></span>
-          <span>2. Accidental Main Commit</span>
+        <button id="btnAddPathModal" class="browse-btn-icon" title="Type or paste any custom folder path">
+          + Path
         </button>
-        <button class="mission-tab" data-scenario="squash-pr" id="tabSquashPr">
-          <span class="tab-dot dot-purple"></span>
-          <span>3. Squash 4 Commits</span>
+        <button id="btnRefreshRepo" class="icon-btn-sm" title="Refresh from Disk">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
         </button>
-        <button class="mission-tab" data-scenario="reflog-rescue" id="tabReflogRescue">
-          <span class="tab-dot dot-cyan"></span>
-          <span>4. Reflog Undo / Rescue</span>
-        </button>
-      </nav>
+      </div>
+
+      <!-- Live Branch & Sync Chip -->
+      <div class="live-branch-chip" id="branchChip">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="6" y1="3" x2="6" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path></svg>
+        <span id="currentBranchName">master</span>
+        <span class="sync-tag" id="syncStatusTag">Clean</span>
+      </div>
     </div>
 
+    <!-- Quick Universal Git Surgery Actions -->
     <div class="nav-right">
-      <button id="btnSoundToggle" class="icon-pill" title="Toggle audio feedback" aria-label="Toggle Sound">
-        <svg id="sfxIconOn" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-          <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-        </svg>
-        <svg id="sfxIconOff" class="hidden" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-          <line x1="23" y1="9" x2="17" y2="15"></line>
-          <line x1="17" y1="9" x2="23" y2="15"></line>
-        </svg>
+      <div class="surgery-action-bar">
+        <button id="btnToolDoctor" class="tool-btn tool-btn-doctor" title="Git Doctor: diagnose health & auto-repair issues">
+          <span class="doc-pulse"></span>
+          <span>🩺 Git Doctor</span>
+        </button>
+        <button id="btnToolCheckpoint" class="tool-btn" title="Create Safety Checkpoint / Snapshot">
+          <span>🛡️ Checkpoint</span>
+        </button>
+        <button id="btnToolSquash" class="tool-btn" title="Squash multiple commits into 1 clean commit">
+          <span>📦 Squash</span>
+        </button>
+        <button id="btnToolUndo" class="tool-btn" title="Undo the latest commit safely">
+          <span>⏪ Undo</span>
+        </button>
+        <button id="btnToolMoveBranch" class="tool-btn" title="Move commits to a new branch (fix accidental commit on main)">
+          <span>🌿 Move to Branch</span>
+        </button>
+        <button id="btnToolReflog" class="tool-btn" title="Open Reflog Time Machine to recover any lost commit">
+          <span>⏳ Reflog</span>
+        </button>
+      </div>
+
+      <button id="btnSoundToggle" class="icon-pill" title="Toggle Sound Feedback">
+        <svg id="sfxIconOn" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+        <svg id="sfxIconOff" class="hidden" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
       </button>
 
-      <button id="btnOpenGuide" class="btn btn-ghost" title="How Git Works">
+      <button id="btnOpenGuide" class="btn btn-ghost" title="Help Guide">
         <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-        How it Works
-      </button>
-
-      <button id="btnResetAll" class="btn btn-outline" title="Reset current scenario">
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-        Reset Scenario
+        Guide
       </button>
     </div>
   </header>
 
-  <!-- Situation Hero Banner (Explains in plain English what is happening) -->
+  <!-- Interactive Context & Status Banner -->
   <section class="situation-banner" id="situationBanner">
     <div class="banner-badge" id="bannerBadge">
-      <span class="badge-icon">⚠️</span>
-      <span id="bannerBadgeText">Merge Conflict Detected</span>
+      <span class="badge-icon">●</span>
+      <span id="bannerBadgeText">Live Tracking</span>
     </div>
     <div class="banner-body">
-      <h2 id="bannerHeading">Two branches edited the exact same file (<code>src/auth.ts</code>) differently.</h2>
-      <p id="bannerSubheading">Git paused because it doesn't know which teammate's code is correct. Use the visual solver on the right or click below to resolve it.</p>
+      <h2 id="bannerHeading">Repository: <code id="bannerRepoName">git-surgery-simulator</code></h2>
+      <p id="bannerSubheading">Full surgical tool suite + Git Doctor active. Zero-risk operations on your local repositories.</p>
     </div>
     <div class="banner-actions">
-      <button id="btnPrimaryFix" class="btn btn-action">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-        <span id="btnPrimaryFixText">Fix Conflict with Smart Merge</span>
+      <button id="btnQuickPull" class="btn btn-secondary btn-sm" title="git pull: Pull latest remote commits">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Pull
+      </button>
+      <button id="btnQuickPush" class="btn btn-action btn-sm" title="git push: Push current branch commits to origin">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Push
+      </button>
+      <button id="btnQuickFetch" class="btn btn-outline btn-sm" title="git fetch: Fetch all remote updates">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        Fetch
+      </button>
+      <button id="btnQuickStash" class="btn btn-outline btn-sm" title="git stash: Stash current dirty workspace">
+        Stash
+      </button>
+      <button id="btnQuickStashPop" class="btn btn-outline btn-sm" title="git stash pop: Restore stashed changes">
+        Stash Pop
       </button>
     </div>
   </section>
 
-  <!-- Main Split Layout -->
+  <!-- Main Grid Layout -->
   <main class="main-layout">
     
-    <!-- Left: Modern Visual Git Swimlane Graph -->
+    <!-- Left: Live Commit History, Working Tree & Branch Surgery -->
     <section class="graph-section">
-      <div class="graph-header">
-        <div class="graph-title-group">
-          <span class="section-label">VISUAL COMMIT GRAPH</span>
-          <span class="graph-hint">Click any commit to inspect. Watch branches diverge and reconnect.</span>
+      <!-- Workbench Tabs Navigation -->
+      <div class="workbench-tabs-bar">
+        <div class="workbench-tabs">
+          <button class="wb-tab active" data-tab="swimlane" id="tabBtnSwimlane">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="6" y1="9" x2="6" y2="15"/><line x1="9" y1="9" x2="18" y2="15"/></svg>
+            Commit Swimlane
+          </button>
+          <button class="wb-tab" data-tab="staging" id="tabBtnStaging">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+            Working Tree & Changes
+            <span class="tab-badge" id="stagingTabBadge">0</span>
+          </button>
+          <button class="wb-tab" data-tab="diff" id="tabBtnDiff">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+            Diff & Code Preview
+            <span class="tab-badge" id="diffTabBadge">0</span>
+          </button>
+          <button class="wb-tab" data-tab="branches" id="tabBtnBranches">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
+            Branches
+            <span class="tab-badge" id="branchesTabBadge">0</span>
+          </button>
+          <button class="wb-tab" data-tab="stashes" id="tabBtnStashes">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+            Stash Shelf
+            <span class="tab-badge" id="stashesTabBadge">0</span>
+          </button>
         </div>
-        <div class="swimlane-legend">
-          <span class="legend-chip lane-main"><span class="chip-dot"></span> main</span>
-          <span class="legend-chip lane-feature"><span class="chip-dot"></span> feature/auth</span>
-          <span class="legend-chip lane-head"><span class="chip-dot"></span> HEAD (You are here)</span>
+        <div class="quick-command-chips">
+          <button class="chip-cmd" data-cmd="git status">git status</button>
+          <button class="chip-cmd" data-cmd="git branch -a">git branch</button>
+          <button class="chip-cmd" data-cmd="git log -n 5 --oneline">git log</button>
+          <button class="chip-cmd" data-cmd="git diff">git diff</button>
         </div>
       </div>
 
-      <!-- Swimlane Canvas Wrapper -->
-      <div class="swimlane-viewport" id="swimlaneViewport">
-        <!-- Visual Git Rail Track rendered by app.js -->
-        <div class="swimlane-tracks" id="swimlaneTracks">
-          <!-- Commit cards will be rendered dynamically with clean connecting rails -->
+      <!-- VIEW 1: Commit Swimlane DAG -->
+      <div class="workbench-view active" id="viewSwimlane">
+        <div class="graph-header-sub">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="section-label">VISUAL DAG COMMIT HISTORY</span>
+            <span class="graph-hint" id="graphStatsHint">Showing latest commits from disk</span>
+          </div>
+          <input type="text" id="commitSearchInput" class="filter-input-sm" placeholder="🔍 Search commits by msg, author, hash..." style="max-width: 250px;">
+        </div>
+        <div class="swimlane-viewport" id="swimlaneViewport">
+          <div class="swimlane-tracks" id="swimlaneTracks">
+            <!-- Real commits rendered dynamically -->
+          </div>
+        </div>
+
+        <!-- Quick Commit & Branch Creation Bar -->
+        <div class="commit-bar">
+          <div class="commit-input-group">
+            <span class="commit-prefix">$ git commit -am</span>
+            <input type="text" id="inputCommitMsg" class="commit-text-input" placeholder="Type commit message to stage & commit real changes...">
+          </div>
+          <button id="btnRealCommit" class="btn btn-action btn-sm">
+            Commit Changes
+          </button>
+          <button id="btnNewBranchPrompt" class="btn btn-secondary btn-sm">
+            + New Branch
+          </button>
         </div>
       </div>
 
-      <!-- Quick Commit Injector -->
-      <div class="commit-bar">
-        <div class="commit-input-group">
-          <span class="commit-prefix">$ git commit -m</span>
-          <input type="text" id="inputCommitMsg" class="commit-text-input" placeholder="feat: your commit message..." value="feat(ui): add smooth glowing transitions">
+      <!-- VIEW 2: Working Tree & File Staging Workbench -->
+      <div class="workbench-view hidden" id="viewStaging">
+        <div class="staging-grid">
+          <!-- Unstaged Column -->
+          <div class="staging-col">
+            <div class="staging-col-header">
+              <div class="col-title-group">
+                <span class="col-badge badge-unstaged">UNSTAGED</span>
+                <span class="col-count" id="unstagedCountLabel">0 files</span>
+              </div>
+              <div style="display: flex; gap: 4px;">
+                <button id="btnStageAll" class="btn-tiny btn-action-tiny" title="git add -A">+ Stage All</button>
+                <button id="btnDiscardAllUnstaged" class="btn-tiny btn-ghost-tiny danger" title="Discard all unstaged modifications">✕ Discard All</button>
+              </div>
+            </div>
+            <div class="file-cards-list" id="unstagedFileList">
+              <div class="empty-state-hint">Workspace is clean. No uncommitted modifications.</div>
+            </div>
+          </div>
+
+          <!-- Staged Column -->
+          <div class="staging-col">
+            <div class="staging-col-header">
+              <div class="col-title-group">
+                <span class="col-badge badge-staged">STAGED</span>
+                <span class="col-count" id="stagedCountLabel">0 files</span>
+              </div>
+              <button id="btnUnstageAll" class="btn-tiny btn-ghost-tiny" title="git reset">- Unstage All</button>
+            </div>
+            <div class="file-cards-list" id="stagedFileList">
+              <div class="empty-state-hint">No files staged for commit.</div>
+            </div>
+          </div>
         </div>
-        <button id="btnAddCommit" class="btn btn-secondary">
-          + Add Commit
-        </button>
-        <button id="btnBranchOut" class="btn btn-outline">
-          🌿 Spawn Branch
-        </button>
+
+        <!-- Staging Commit Composer -->
+        <div class="staging-commit-composer">
+          <div class="commit-preset-chips" style="display: flex; align-items: center; gap: 4px; margin-bottom: 6px; flex-wrap: wrap;">
+            <span style="font-size: 0.68rem; color: var(--text-dim); font-weight: 700; margin-right: 2px;">PREFIX:</span>
+            <button type="button" class="chip-preset" data-prefix="feat: ">feat</button>
+            <button type="button" class="chip-preset" data-prefix="fix: ">fix</button>
+            <button type="button" class="chip-preset" data-prefix="refactor: ">refactor</button>
+            <button type="button" class="chip-preset" data-prefix="chore: ">chore</button>
+            <button type="button" class="chip-preset" data-prefix="docs: ">docs</button>
+            <button type="button" class="chip-preset" data-prefix="style: ">style</button>
+          </div>
+          <div class="composer-top">
+            <textarea id="composerCommitMsg" class="composer-textarea" rows="2" placeholder="Write an atomic commit message (e.g. fix: resolve null reference in auth)..."></textarea>
+          </div>
+          <div class="composer-bottom">
+            <label class="checkbox-label" title="Combine these changes into previous commit">
+              <input type="checkbox" id="checkAmendCommit">
+              <span>Amend Previous Commit</span>
+            </label>
+            <div class="composer-buttons">
+              <button id="btnCommitStagedOnly" class="btn btn-secondary btn-sm">Commit Staged Only</button>
+              <button id="btnStageAllAndCommit" class="btn btn-action btn-sm">⚡ Stage All & Commit</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 3: Branches Manager -->
+      <div class="workbench-view hidden" id="viewBranches">
+        <div class="branches-toolbar">
+          <input type="text" id="branchFilterInput" class="filter-input-sm" placeholder="Filter branches...">
+          <button id="btnCreateNewBranchToolbar" class="btn btn-action btn-sm">+ New Branch</button>
+        </div>
+        <div class="branches-list-container" id="branchesListContainer">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+
+      <!-- VIEW 4: Stash Shelf -->
+      <div class="workbench-view hidden" id="viewStashes">
+        <div class="stashes-toolbar">
+          <input type="text" id="stashMessageInput" class="filter-input-sm" placeholder="Optional stash description...">
+          <button id="btnCreateStashNow" class="btn btn-action btn-sm">📦 Create New Stash</button>
+        </div>
+        <div class="stashes-list-container" id="stashesListContainer">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+
+      <!-- VIEW 5: Full-Width Diff & Code Preview Workbench -->
+      <div class="workbench-view hidden" id="viewDiff">
+        <div class="diff-workbench-header">
+          <div class="diff-header-left">
+            <span class="diff-target-icon">📄</span>
+            <div>
+              <div class="diff-target-title" id="wbDiffTitle">Select a file or commit to inspect diff</div>
+              <div class="diff-target-sub" id="wbDiffSub">Full-width visual comparison with line numbers & syntax highlights</div>
+            </div>
+          </div>
+          <div class="diff-header-center">
+            <span class="diff-stat-chip add" id="wbDiffStatAdd">+0</span>
+            <span class="diff-stat-chip del" id="wbDiffStatDel">-0</span>
+            <div class="diff-mode-toggle">
+              <button class="btn-diff-mode active" id="btnWbDiffModeUnified" data-mode="unified">Unified</button>
+              <button class="btn-diff-mode" id="btnWbDiffModeSplit" data-mode="split">Side-by-Side</button>
+            </div>
+          </div>
+          <div class="diff-header-actions">
+            <button class="btn btn-secondary btn-sm" id="btnWbDiffStageFile" title="Stage this file in Git">+ Stage File</button>
+            <button class="btn btn-ghost btn-sm danger" id="btnWbDiffDiscardFile" title="Discard uncommitted changes in this file">✕ Discard</button>
+            <button class="btn btn-outline btn-sm" id="btnWbDiffCopy" title="Copy raw diff to clipboard">📋 Copy Diff</button>
+            <button class="btn btn-outline btn-sm" id="btnWbDiffPopout" title="Pop out into full-screen dialog">⛶ Fullscreen Modal</button>
+          </div>
+        </div>
+
+        <div class="diff-workbench-container" id="wbDiffContainer">
+          <div class="diff-empty-state" id="wbDiffEmpty">
+            <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity: 0.35;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="15" y2="16"/></svg>
+            <div style="font-weight: 700; font-size: 0.95rem; color: #fff; margin-top: 8px;">No file or commit selected</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); max-width: 420px; text-align: center; margin-top: 4px;">
+              Click the <strong style="color: var(--brand-cyan);">👁️ Diff</strong> button on any file in the Working Tree or on any commit node to inspect the full-width visual diff here.
+            </div>
+          </div>
+          <div class="diff-viewer-code-box fullwidth-code-box hidden" id="wbDiffCodeBox">
+            <!-- Rendered diff lines with line numbers -->
+          </div>
+        </div>
       </div>
     </section>
 
-    <!-- Right: Interactive Surgery & 3-Way Conflict Solver -->
+    <!-- Right: Real Command Terminal & Live Surgery Drawer -->
     <aside class="solver-section" id="solverSection">
-      
-      <!-- Top Action Switcher: Conflict vs Rebase Tray vs Reflog -->
-      <div class="solver-card" id="conflictCard">
-        <div class="solver-card-header">
-          <div class="header-icon-title">
-            <div class="solver-status-dot pulse-amber" id="solverDot"></div>
+
+      <!-- 1. Smart Git Intent & Recommendation Copilot Card -->
+      <div class="copilot-card" id="copilotCard">
+        <div class="copilot-card-top">
+          <div class="copilot-title-group">
+            <span class="copilot-pulse-dot"></span>
             <div>
-              <h3 class="solver-title" id="solverTitle">3-Way Conflict Resolver</h3>
-              <p class="solver-sub" id="solverSub">File: <code>src/auth.ts</code> (Lines 4-12)</p>
+              <div class="copilot-heading">
+                <span class="copilot-logo-badge">AI COPILOT</span>
+                <span>Smart Git Intent & Recommendation</span>
+              </div>
+              <p class="copilot-sub">Type what you want to achieve in plain English. We diagnose live repo state and recommend the safest action.</p>
             </div>
           </div>
-          <span class="status-pill status-unresolved" id="statusPill">Needs Decision</span>
+          <button id="btnQuickRepoDiagnose" class="btn-tiny btn-ghost-tiny" title="Re-analyze repository condition">🔄 Re-diagnose</button>
         </div>
 
-        <!-- Before / Conflict Comparison Blocks -->
+        <!-- Query Input Bar -->
+        <div class="copilot-input-container">
+          <div class="copilot-input-wrapper">
+            <span class="copilot-input-icon">💡</span>
+            <input type="text" id="copilotQueryInput" class="copilot-input" placeholder="e.g. 'I committed to master by mistake', 'undo last commit', 'discard unstaged changes'..." />
+            <button id="btnClearCopilotInput" class="btn-clear-input hidden" title="Clear input">✕</button>
+          </div>
+          <button id="btnAnalyzeIntent" class="btn btn-action btn-sm btn-copilot-go">
+            <span>⚡ Recommend</span>
+          </button>
+        </div>
+
+        <!-- Preset Intent Quick-Chips -->
+        <div class="copilot-preset-chips" id="copilotPresetChips">
+          <span class="preset-label">QUICK INTENTS:</span>
+          <button type="button" class="copilot-chip" data-intent="Committed to main by mistake">🌿 Committed to main</button>
+          <button type="button" class="copilot-chip" data-intent="Undo last commit safely">⏪ Soft Undo Commit</button>
+          <button type="button" class="copilot-chip" data-intent="Discard all uncommitted changes">✕ Discard Unstaged</button>
+          <button type="button" class="copilot-chip" data-intent="Save temporary work and clean branch">📦 Stash Temp Work</button>
+          <button type="button" class="copilot-chip" data-intent="Fix stuck git lock index.lock">🚨 Fix Stuck Lock</button>
+          <button type="button" class="copilot-chip" data-intent="Combine messy WIP commits">📦 Squash Commits</button>
+          <button type="button" class="copilot-chip" data-intent="Sync branch with remote changes">⬇️ Pull Remote</button>
+          <button type="button" class="copilot-chip" data-intent="Recover lost or deleted commit">⏳ Recover Lost Commit</button>
+        </div>
+
+        <!-- Recommendation Output Container (Populated dynamically) -->
+        <div class="copilot-recommendation-box" id="copilotRecommendationBox">
+          <div class="copilot-diagnosis-strip" id="copilotDiagnosisStrip">
+            <span class="diag-icon">🔍</span>
+            <span class="diag-text" id="copilotDiagnosisText">Analyzing repository state...</span>
+          </div>
+
+          <div class="copilot-action-card" id="copilotActionCard">
+            <div class="copilot-action-header">
+              <div class="copilot-action-title-group">
+                <span class="safety-badge badge-safe" id="copilotSafetyBadge">🟢 Safe (Zero Code Lost)</span>
+                <h4 class="copilot-action-title" id="copilotActionTitle">Recommended Action Title</h4>
+              </div>
+            </div>
+            
+            <p class="copilot-action-summary" id="copilotActionSummary">Plain English explanation of why this action is recommended.</p>
+
+            <div class="copilot-what-happens-box">
+              <span class="what-happens-label">📘 WHAT WILL HAPPEN IN PLAIN ENGLISH:</span>
+              <ul class="what-happens-list" id="copilotWhatHappensList">
+                <li>Step 1 of what will happen to your files and branch...</li>
+              </ul>
+            </div>
+
+            <div class="copilot-command-preview">
+              <span class="cmd-label">Under the hood (Git CLI):</span>
+              <code id="copilotCmdPreview">git branch feature/work && git reset --hard HEAD~1</code>
+            </div>
+
+            <div class="copilot-execution-bar">
+              <button id="btnExecuteRecommendedAction" class="btn btn-action btn-execute-rec">
+                <span id="copilotExecBtnText">⚡ Execute Recommended Action</span>
+              </button>
+              <div class="copilot-alternatives-group" id="copilotAlternativesGroup">
+                <!-- Alternative action chips rendered dynamically -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Live Action Impact Inspector (Always displays what any hovered/focused button does) -->
+      <div class="action-inspector-bar" id="actionInspectorBar">
+        <div class="inspector-icon-col">
+          <span class="inspector-icon" id="inspectorIcon">ℹ️</span>
+        </div>
+        <div class="inspector-content-col">
+          <div class="inspector-header-line">
+            <span class="inspector-action-name" id="inspectorActionName">Action Impact Inspector</span>
+            <span class="safety-badge badge-safe" id="inspectorSafetyBadge">🟢 Interactive Guide</span>
+          </div>
+          <div class="inspector-desc-line" id="inspectorDesc">
+            Hover over any button or tool in the workspace to preview what will happen to your files and Git history before clicking.
+          </div>
+          <div class="inspector-cmd-line hidden" id="inspectorCmdBox">
+            <span class="cmd-mini-label">CLI:</span>
+            <code id="inspectorCmdCode">git ...</code>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Disaster Rescue & Surgery Box -->
+      <div class="rescue-box">
+        <div class="rescue-box-top">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="font-size: 0.9rem;">🚨</span>
+            <span style="font-size: 0.76rem; font-weight: 700; color: #fff; letter-spacing: 0.03em;">GIT RESCUE & SURGERY SUITE</span>
+          </div>
+          <span style="font-size: 0.68rem; color: var(--text-dim);">1-Click Safe Repairs</span>
+        </div>
+        <div class="rescue-actions-grid">
+          <button id="btnRescueMainAccident" class="btn-rescue" title="Move commits mistakenly made on main to a new feature branch">
+            <span class="rescue-icon">🌿</span>
+            <div class="rescue-text">
+              <span class="rescue-title">Committed to Main?</span>
+              <span class="rescue-desc">Move to new branch safely</span>
+            </div>
+          </button>
+          <button id="btnRescueSoftUndo" class="btn-rescue" title="Undo latest commit without losing any code">
+            <span class="rescue-icon">⏪</span>
+            <div class="rescue-text">
+              <span class="rescue-title">Soft Undo Commit</span>
+              <span class="rescue-desc">Keep code in working tree</span>
+            </div>
+          </button>
+          <button id="btnRescueSquashWIP" class="btn-rescue" title="Squash messy WIP commits into 1 clean commit">
+            <span class="rescue-icon">📦</span>
+            <div class="rescue-text">
+              <span class="rescue-title">Interactive Squash</span>
+              <span class="rescue-desc">Collapse messy commits</span>
+            </div>
+          </button>
+          <button id="btnRescueLostCommits" class="btn-rescue" title="Recover lost or reset commits via Reflog">
+            <span class="rescue-icon">⏳</span>
+            <div class="rescue-text">
+              <span class="rescue-title">Reflog Time Machine</span>
+              <span class="rescue-desc">Revive deleted commits</span>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Live 3-Way Conflict Resolver -->
+      <div class="solver-card hidden" id="conflictCard">
+        <div class="solver-card-header">
+          <div class="header-icon-title">
+            <div class="solver-status-dot pulse-amber"></div>
+            <div>
+              <h3 class="solver-title" id="conflictFileName">Conflict in file</h3>
+              <p class="solver-sub">Lines in collision. Click to resolve & write directly to disk.</p>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <button id="btnExpandConflictFullWidth" class="btn-tiny btn-action-tiny" title="Expand conflict resolver to full width screen">⛶ Full Width</button>
+            <span class="status-pill status-unresolved">Conflict</span>
+          </div>
+        </div>
+
         <div class="diff-split-container" id="diffContainer">
-          
-          <!-- Current Branch (Mine) -->
           <div class="diff-panel panel-current">
-            <div class="panel-header">
-              <span class="branch-pill pill-feature">HEAD (Your Branch)</span>
-              <span class="author-tag">JWT Token Verification</span>
-            </div>
-            <pre class="code-preview"><code>export const validateSession = (token: string) => {
-  // Direct JWT cryptographic verify
-  return jwt.verify(token, process.env.JWT_SECRET);
-};</code></pre>
-            <button id="btnPickCurrent" class="btn-pick btn-pick-current">
-              👈 Keep Yours Only
-            </button>
+            <div class="panel-header"><span class="branch-pill pill-feature">Your Version (HEAD)</span></div>
+            <pre class="code-preview"><code id="codeCurrent"></code></pre>
+            <button id="btnRealPickCurrent" class="btn-pick btn-pick-current">👈 Keep Your Version</button>
           </div>
 
-          <!-- Incoming Branch (Teammate / Main) -->
           <div class="diff-panel panel-incoming">
-            <div class="panel-header">
-              <span class="branch-pill pill-main">main (Teammate's Branch)</span>
-              <span class="author-tag">Redis Cache Lookup</span>
-            </div>
-            <pre class="code-preview"><code>export const validateSession = async (token: string) => {
-  // Fast Redis key-value cache lookup
-  const session = await redis.get(`sess:${token}`);
-  return session ? JSON.parse(session) : null;
-};</code></pre>
-            <button id="btnPickIncoming" class="btn-pick btn-pick-incoming">
-              👉 Keep Theirs Only
-            </button>
+            <div class="panel-header"><span class="branch-pill pill-main">Incoming Version</span></div>
+            <pre class="code-preview"><code id="codeIncoming"></code></pre>
+            <button id="btnRealPickIncoming" class="btn-pick btn-pick-incoming">👉 Keep Incoming Version</button>
           </div>
-
         </div>
 
-        <!-- Smart Combined Option -->
-        <div class="smart-combine-box" id="smartCombineBox">
+        <div class="smart-combine-box">
           <div class="combine-text">
-            <strong>🤝 Best of Both Worlds (Smart Synthesis):</strong>
-            <span>Check Redis cache first for lightning speed, then fallback to JWT signature check.</span>
+            <strong>🤝 Merge Both Versions:</strong>
+            <span>Combines both blocks safely and stages the file with <code>git add</code>.</span>
           </div>
-          <button id="btnPickBoth" class="btn btn-combine">
-            Merge Both Cleanly
-          </button>
-        </div>
-
-        <!-- Resolved Preview (Appears after choosing) -->
-        <div class="resolved-result-box hidden" id="resolvedResultBox">
-          <div class="resolved-header">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#10b981" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-            <span class="resolved-title">Conflict Solved! Clean Merge Commit Generated</span>
-          </div>
-          <pre class="code-preview-clean"><code id="resolvedCodePreview"></code></pre>
+          <button id="btnRealPickBoth" class="btn btn-combine">Merge Both</button>
         </div>
       </div>
 
-      <!-- Rebase Tray (Active when in Squash / Rebase Scenario) -->
-      <div class="solver-card hidden" id="rebaseCard">
-        <div class="solver-card-header">
-          <div class="header-icon-title">
-            <div class="solver-status-dot pulse-purple"></div>
-            <div>
-              <h3 class="solver-title">Interactive Squash Studio</h3>
-              <p class="solver-sub">Squash 4 messy WIP commits into 1 atomic PR commit</p>
-            </div>
-          </div>
-        </div>
-        <div class="rebase-stepper-list" id="rebaseStepperList">
-          <!-- Interactive commit checklist -->
-        </div>
-        <div class="rebase-actions-bar">
-          <button id="btnExecuteSquash" class="btn btn-action w-full">
-            ✨ Squash into Single Clean PR Commit
-          </button>
-        </div>
-      </div>
-
-      <!-- Safe Terminal Assistant (Explains each command like a human) -->
+      <!-- Interactive Git Command Terminal -->
       <div class="terminal-card">
         <div class="terminal-card-top">
           <div class="terminal-title-group">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
-            <span class="term-heading">Safe Terminal Script</span>
+            <div class="term-dots">
+              <span class="tdot t-red"></span>
+              <span class="tdot t-yellow"></span>
+              <span class="tdot t-green"></span>
+            </div>
+            <span class="term-heading">Git Terminal Execution</span>
           </div>
-          <button id="btnCopyCommands" class="btn-copy-chip">
-            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-            Copy Commands
+          <div class="terminal-top-actions">
+            <button id="btnClearTerminal" class="btn-copy-chip" title="Clear console output">Clear</button>
+            <button id="btnCopyTerminal" class="btn-copy-chip" title="Copy console output">Copy</button>
+          </div>
+        </div>
+
+        <!-- Terminal Output Window -->
+        <div class="terminal-console-output" id="terminalOutput">
+          <div class="term-welcome">
+            <span class="term-dim"># Git Surgery Real-Time CLI ready.</span><br>
+            <span class="term-dim"># Type any command below or use the surgical suite above.</span><br>
+            <span class="term-cyan">$ git status</span>
+          </div>
+        </div>
+
+        <!-- Terminal Input Bar -->
+        <form class="terminal-prompt-bar" id="terminalForm">
+          <span class="prompt-sym">$</span>
+          <input type="text" id="terminalCmdInput" class="terminal-cmd-input" placeholder="Type any git command (e.g. status, pull, branch, log, checkout -b)..." autocomplete="off" spellcheck="false">
+          <button type="submit" id="btnRunCommand" class="btn-run-cmd" title="Execute command">
+            Run ↵
           </button>
-        </div>
-
-        <div class="terminal-command-flow" id="terminalFlow">
-          <!-- Human-friendly step-by-step commands -->
-        </div>
-
-        <div class="terminal-card-bottom">
-          <div class="safe-indicator">
-            <span class="shield-icon">🛡️</span>
-            <span><strong>Zero Risk Mode:</strong> All steps keep your original commits in reflog so you can never lose code.</span>
-          </div>
-        </div>
+        </form>
       </div>
 
     </aside>
 
   </main>
 
-  <!-- Modern How It Works Dialog -->
-  <dialog id="guideDialog" closedby="any" class="modern-dialog">
+  <!-- ========================================================================
+       MODALS: GIT DOCTOR, CHECKPOINTS, SQUASH, UNDO, MOVE BRANCH, REFLOG, DIFF
+       ======================================================================== -->
+
+  <!-- 0.1. Git Doctor Modal (REA Inspired Diagnostics & Self-Healing) -->
+  <dialog id="modalDoctor" closedby="any" class="modern-dialog wide-dialog">
     <div class="dialog-inner">
       <div class="dialog-top">
-        <h2 class="dialog-heading">Git Demystified in 60 Seconds</h2>
-        <form method="dialog"><button class="dialog-close-btn" aria-label="Close">✕</button></form>
+        <div style="display: flex; align-items: center; gap: 0.6rem;">
+          <h2 class="dialog-heading">🩺 Git Doctor Health Diagnostics</h2>
+          <span id="doctorScoreBadge" class="score-badge">Health: 100%</span>
+        </div>
+        <form method="dialog"><button class="dialog-close-btn">✕</button></form>
       </div>
+      <p class="dialog-desc">Reverse-engineered diagnostic engine that scans for corrupted index locks, interrupted merges, broken rebases, and detached HEADs.</p>
       
-      <div class="dialog-steps">
-        <div class="step-card">
-          <span class="step-badge">1</span>
-          <h3>What is a Branch?</h3>
-          <p>A branch is simply a sticky label pointing to a commit snapshot. When you branch, you create an isolated playground that doesn't touch your main codebase.</p>
-        </div>
-
-        <div class="step-card">
-          <span class="step-badge">2</span>
-          <h3>Why do Conflicts Happen?</h3>
-          <p>When you and a teammate edit the exact same lines of code before merging, Git stops and asks: <em>"Which line is right?"</em> You just pick one or combine both!</p>
-        </div>
-
-        <div class="step-card">
-          <span class="step-badge">3</span>
-          <h3>What is Squashing?</h3>
-          <p>Taking 5 small "WIP", "fixed typo", "trying again" commits and rolling them into 1 clean, professional commit for your GitHub Pull Request.</p>
-        </div>
-
-        <div class="step-card">
-          <span class="step-badge">4</span>
-          <h3>The Git Reflog Safety Net</h3>
-          <p>Git never truly deletes commits immediately. Every single action is saved in the local <code>reflog</code>, so you can always time-travel backward.</p>
-        </div>
+      <div class="doctor-checks-list" id="doctorChecksList">
+        <!-- Rendered dynamically -->
       </div>
 
       <div class="dialog-actions">
-        <form method="dialog">
-          <button class="btn btn-action">Got It, Let's Play!</button>
-        </form>
+        <button id="btnRerunDoctor" class="btn btn-secondary">Re-scan</button>
       </div>
     </div>
   </dialog>
 
-  <!-- Notification Toast -->
+  <!-- 0.5. Safety Checkpoints Modal -->
+  <dialog id="modalCheckpoint" closedby="any" class="modern-dialog">
+    <div class="dialog-inner">
+      <div class="dialog-top">
+        <h2 class="dialog-heading">🛡️ Safety Snapshots & Rollback</h2>
+        <form method="dialog"><button class="dialog-close-btn">✕</button></form>
+      </div>
+      <p class="dialog-desc">Take a snapshot before making risky changes. You can restore back to this exact second anytime with zero data loss.</p>
+      
+      <div class="checkpoint-create-row">
+        <input type="text" id="checkpointNameInput" class="form-text-input" placeholder="Checkpoint label (e.g. before-major-refactor)">
+        <button id="btnCreateCheckpoint" class="btn btn-action">Snapshot Now</button>
+      </div>
+
+      <div class="checkpoint-existing-list">
+        <label class="form-label">Existing Snapshots in Repository:</label>
+        <div id="checkpointsListContainer" class="checkpoints-sublist">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- 1. Real Squash Modal -->
+  <dialog id="modalSquash" closedby="any" class="modern-dialog">
+    <div class="dialog-inner">
+      <div class="dialog-top">
+        <h2 class="dialog-heading">📦 Squash Commits on Real Repository</h2>
+        <form method="dialog"><button class="dialog-close-btn">✕</button></form>
+      </div>
+      <div class="dialog-body-form">
+        <label class="form-label">How many recent commits do you want to squash into 1?</label>
+        <div class="slider-row">
+          <input type="range" id="squashCountSlider" min="2" max="10" value="2" class="range-slider">
+          <span id="squashCountLabel" class="slider-val-badge">2 commits</span>
+        </div>
+        <label class="form-label">New Unified PR Commit Message:</label>
+        <input type="text" id="squashMsgInput" class="form-text-input" value="feat: squashed atomic PR commit">
+        <div class="command-preview-box">
+          <span class="cmd-preview-label">Command that will run on your disk:</span>
+          <code>git reset --soft HEAD~<span id="squashCmdCount">2</span> && git commit -m "..."</code>
+        </div>
+        <div class="modal-what-will-happen-callout">
+          <div class="m-callout-header">
+            <span>📘 What will happen in plain English:</span>
+            <span class="safety-badge badge-reversible">🟡 Reversible History Rewrite</span>
+          </div>
+          <ul class="m-callout-list">
+            <li>Your recent commits will be cleanly combined into 1 atomic commit snapshot.</li>
+            <li><strong>Your code is 100% safe:</strong> All file modifications remain intact.</li>
+            <li>Your Git branch history becomes neat and easy for teammates to review.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="dialog-actions">
+        <button id="btnExecuteRealSquash" class="btn btn-action">✨ Execute Real Squash</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- 2. Real Undo Commit Modal -->
+  <dialog id="modalUndo" closedby="any" class="modern-dialog">
+    <div class="dialog-inner">
+      <div class="dialog-top">
+        <h2 class="dialog-heading">⏪ Undo Latest Commit</h2>
+        <form method="dialog"><button class="dialog-close-btn">✕</button></form>
+      </div>
+      <div class="dialog-body-form">
+        <p class="dialog-desc">Choose how you want to undo the last commit on the active branch:</p>
+        <div class="undo-options">
+          <label class="undo-option-card active">
+            <input type="radio" name="undoMode" value="soft" checked>
+            <div class="undo-text">
+              <strong>Soft Undo (Recommended)</strong>
+              <span>Keeps all your code changes safely in working tree, only removes the commit snapshot.</span>
+            </div>
+          </label>
+          <label class="undo-option-card">
+            <input type="radio" name="undoMode" value="mixed">
+            <div class="undo-text">
+              <strong>Mixed Undo</strong>
+              <span>Unstages changes and keeps modified files in your directory.</span>
+            </div>
+          </label>
+        </div>
+        <div class="modal-what-will-happen-callout">
+          <div class="m-callout-header">
+            <span>📘 What will happen in plain English:</span>
+            <span class="safety-badge badge-safe">🟢 100% Safe (No Code Lost)</span>
+          </div>
+          <ul class="m-callout-list">
+            <li><strong>Soft Undo:</strong> Erases the commit record from Git history, but keeps <em>100% of your code</em> in the Staging Area. You can edit and re-commit anytime.</li>
+            <li><strong>Mixed Undo:</strong> Erases the commit record and moves files to unstaged edits in your working directory.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="dialog-actions">
+        <button id="btnExecuteRealUndo" class="btn btn-action">Execute Safe Undo</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- 3. Move Commit to New Branch Modal -->
+  <dialog id="modalMoveBranch" closedby="any" class="modern-dialog">
+    <div class="dialog-inner">
+      <div class="dialog-top">
+        <h2 class="dialog-heading">🌿 Move Commit to New Branch</h2>
+        <form method="dialog"><button class="dialog-close-btn">✕</button></form>
+      </div>
+      <div class="dialog-body-form">
+        <p class="dialog-desc">Accidentally committed to <code>main</code>? Move your work to a new feature branch and safely rewind current branch back.</p>
+        <label class="form-label">New Feature Branch Name:</label>
+        <input type="text" id="moveBranchNameInput" class="form-text-input" value="feature/my-new-feature">
+        <div class="command-preview-box">
+          <span class="cmd-preview-label">Command sequence that will run:</span>
+          <code>git branch &lt;name&gt; && git reset --hard HEAD~1 && git checkout &lt;name&gt;</code>
+        </div>
+        <div class="modal-what-will-happen-callout">
+          <div class="m-callout-header">
+            <span>📘 What will happen in plain English:</span>
+            <span class="safety-badge badge-safe">🟢 100% Safe (Zero Work Lost)</span>
+          </div>
+          <ul class="m-callout-list">
+            <li>Creates the new branch pointing to your latest commit, safely preserving all your changes.</li>
+            <li>Rewinds <code>main</code> back 1 commit so production remains clean and unpolluted.</li>
+            <li>Checks out the new branch so you can continue developing seamlessly.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="dialog-actions">
+        <button id="btnExecuteMoveBranch" class="btn btn-action">Move & Rewind Main</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- 4. Reflog Time Travel Drawer Modal -->
+  <dialog id="modalReflog" closedby="any" class="modern-dialog wide-dialog">
+    <div class="dialog-inner">
+      <div class="dialog-top">
+        <h2 class="dialog-heading">⏳ Git Reflog Time Machine</h2>
+        <form method="dialog"><button class="dialog-close-btn">✕</button></form>
+      </div>
+      <p class="dialog-desc">Every action is recorded in your local reflog. Click "Restore to Here" on any snapshot to safely recover your code.</p>
+      <div class="reflog-history-list" id="reflogList">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+  </dialog>
+
+  <!-- 5. Deep Diff Inspector Full-Width Modal -->
+  <dialog id="modalDiff" closedby="any" class="modern-dialog fullwidth-diff-dialog">
+    <div class="dialog-inner fullwidth-diff-inner">
+      <div class="dialog-top">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 1.25rem;">🔍</span>
+          <div>
+            <h2 class="dialog-heading" id="diffModalTitle" style="margin: 0;">Visual Diff Inspector</h2>
+            <div style="font-size: 0.72rem; color: var(--text-muted);" id="diffModalSub">Full-width visual comparison with line numbers & syntax highlights</div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="diff-stat-chip add" id="modalDiffStatAdd">+0</span>
+          <span class="diff-stat-chip del" id="modalDiffStatDel">-0</span>
+          <div class="diff-mode-toggle">
+            <button class="btn-diff-mode active" id="btnModalDiffUnified" data-mode="unified">Unified</button>
+            <button class="btn-diff-mode" id="btnModalDiffSplit" data-mode="split">Side-by-Side</button>
+          </div>
+          <button id="btnModalDiffCopy" class="btn btn-outline btn-sm" title="Copy raw diff to clipboard">📋 Copy</button>
+          <button id="btnModalDiffToggleMaximize" class="btn btn-outline btn-sm" title="Toggle edge-to-edge full width">⛶ Fullscreen</button>
+          <form method="dialog"><button class="dialog-close-btn" style="font-size: 1.3rem; padding: 2px 8px;">✕</button></form>
+        </div>
+      </div>
+      <div class="diff-viewer-code-box fullwidth-code-box" id="diffViewerCodeBox">
+        <!-- Rendered diff lines with line numbers -->
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Full-Width 3-Way Conflict Solver Modal -->
+  <dialog id="modalConflictFullWidth" closedby="any" class="modern-dialog fullwidth-diff-dialog">
+    <div class="dialog-inner fullwidth-diff-inner">
+      <div class="dialog-top">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span class="solver-status-dot pulse-amber" style="width: 12px; height: 12px;"></span>
+          <div>
+            <h2 class="dialog-heading" id="fwConflictFileName" style="margin: 0;">Full-Width Conflict Resolver</h2>
+            <div style="font-size: 0.74rem; color: var(--text-muted);">Side-by-side 3-way collision analysis & direct disk resolution</div>
+          </div>
+        </div>
+        <form method="dialog"><button class="dialog-close-btn" style="font-size: 1.4rem; padding: 2px 8px;">✕</button></form>
+      </div>
+
+      <div class="fullwidth-conflict-grid">
+        <div class="diff-panel panel-current fw-panel">
+          <div class="panel-header">
+            <span class="branch-pill pill-feature">Your Version (HEAD / Current Branch)</span>
+            <button id="btnFwPickCurrent" class="btn-pick btn-pick-current">👈 Keep Your Version (HEAD)</button>
+          </div>
+          <pre class="code-preview fw-code-preview"><code id="fwCodeCurrent"></code></pre>
+        </div>
+
+        <div class="diff-panel panel-incoming fw-panel">
+          <div class="panel-header">
+            <span class="branch-pill pill-main">Incoming Version (Remote / Target Branch)</span>
+            <button id="btnFwPickIncoming" class="btn-pick btn-pick-incoming">👉 Keep Incoming Version</button>
+          </div>
+          <pre class="code-preview fw-code-preview"><code id="fwCodeIncoming"></code></pre>
+        </div>
+      </div>
+
+      <div class="smart-combine-box" style="margin-top: 0;">
+        <div class="combine-text">
+          <strong>🤝 Smart Combine Both Versions:</strong>
+          <span>Appends Incoming changes right after Your version without conflict markers and stages with <code>git add</code>.</span>
+        </div>
+        <button id="btnFwPickBoth" class="btn btn-combine" style="padding: 0.6rem 1.4rem; font-size: 0.85rem;">Merge Both Versions</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- 6. In-App Visual Repository & Folder Explorer Modal -->
+  <dialog id="modalOpenPath" closedby="any" class="modern-dialog wide-dialog">
+    <div class="dialog-inner">
+      <div class="dialog-top">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 1.2rem;">📂</span>
+          <h2 class="dialog-heading" style="margin: 0;">In-App Repository & Drive Explorer</h2>
+        </div>
+        <form method="dialog"><button class="dialog-close-btn">✕</button></form>
+      </div>
+      <p class="dialog-desc">Browse local drives, navigate folders, and open any Git repository directly on your machine without OS dialog freezes.</p>
+
+      <!-- Quick Action & Path Input -->
+      <div class="explorer-path-bar">
+        <input type="text" id="customRepoPathInput" class="surgery-input" placeholder="Type or paste absolute path (e.g. D:\OLD_HP_PC_BACKUP\e\GIT_REPOS\rea)" style="flex: 1; font-family: var(--font-mono); font-size: 0.85rem;" />
+        <button id="btnConfirmOpenPath" class="btn btn-action btn-sm">Open Path</button>
+        <button id="btnModalBrowseTrigger" class="btn btn-secondary btn-sm" title="Launch Windows System Folder Dialog via PowerShell">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          OS Dialog...
+        </button>
+      </div>
+
+      <!-- Drives Bar & Breadcrumbs -->
+      <div class="explorer-nav-section">
+        <div class="explorer-drives" id="explorerDrivesBar">
+          <span class="explorer-section-label">DRIVES:</span>
+          <!-- Dynamic drive pills (C:\, D:\) -->
+        </div>
+
+        <div class="explorer-breadcrumb-bar" id="explorerBreadcrumbBar">
+          <span class="breadcrumb-item" data-path="roots">Computer</span>
+          <!-- Dynamic breadcrumbs -->
+        </div>
+      </div>
+
+      <!-- Quick Search Filter in Current Directory -->
+      <div class="explorer-filter-box">
+        <input type="text" id="explorerFilterInput" class="filter-input-sm" placeholder="Filter folders in current directory..." style="width: 100%;">
+      </div>
+
+      <!-- Visual Folder Cards Grid / List -->
+      <div class="explorer-folders-container" id="explorerFoldersContainer">
+        <div class="explorer-loading-state">Loading directories...</div>
+      </div>
+
+      <div class="dialog-actions" style="margin-top: 1rem;">
+        <form method="dialog"><button class="btn btn-ghost">Close</button></form>
+        <button id="btnSelectCurrentExploredRepo" class="btn btn-action hidden">Select This Repository</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Help & Guide Dialog -->
+  <dialog id="guideDialog" closedby="any" class="modern-dialog">
+    <div class="dialog-inner">
+      <div class="dialog-top">
+        <h2 class="dialog-heading">How Git Surgery Works</h2>
+        <form method="dialog"><button class="dialog-close-btn">✕</button></form>
+      </div>
+      <div class="dialog-steps">
+        <div class="step-card">
+          <span class="step-badge">1</span>
+          <h3>Live on Any Repo</h3>
+          <p>Switch between any project on your computer. All actions run real Git commands on your local repository.</p>
+        </div>
+        <div class="step-card">
+          <span class="step-badge">2</span>
+          <h3>Git Doctor</h3>
+          <p>Scans for corrupted lock files, stuck rebases, and detached HEADs, with 1-click auto-repairs.</p>
+        </div>
+        <div class="step-card">
+          <span class="step-badge">3</span>
+          <h3>Safety Snapshots</h3>
+          <p>Create checkpoints before big operations so you can rewind back to that exact second if needed.</p>
+        </div>
+        <div class="step-card">
+          <span class="step-badge">4</span>
+          <h3>1-Click Surgery Suite</h3>
+          <p>Squash messy WIP commits, safely undo commits, or move accidental commits to new branches with 1 click.</p>
+        </div>
+      </div>
+      <div class="dialog-actions">
+        <form method="dialog"><button class="btn btn-action">Got It!</button></form>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Toast Notification Container -->
   <div id="toastBox" class="toast-box" aria-live="polite"></div>
 
   <script src="app.js"></script>

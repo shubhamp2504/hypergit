@@ -1,0 +1,21 @@
+{
+  "name": "git-surgery",
+  "version": "1.0.0",
+  "description": "Zero-Install Git Doctor, Rescue Suite, and AI Copilot for visual Git surgery directly in the browser.",
+  "main": "index.html",
+  "scripts": {
+    "start": "python server.py",
+    "dev": "python server.py"
+  },
+  "keywords": [
+    "git",
+    "git-doctor",
+    "git-surgery",
+    "git-rescue",
+    "git-gui",
+    "copilot",
+    "interactive-git"
+  ],
+  "author": "",
+  "license": "MIT"
+}
