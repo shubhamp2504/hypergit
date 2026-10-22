@@ -1,97 +1,95 @@
-# Git Surgery & Conflict 3D Simulator
+# Git Surgery — Real-Time Git Visualizer & Command Control
 
-An interactive, visual, zero-risk simulation workbench for complex Git operations: interactive rebase, 3-way merge conflict resolution, cherry-picking, and reflog time-travel.
+A crystal-clear, modern developer tool that **connects directly to your real local Git repositories**. It visualizes your commit history in sleek swimlanes, provides an interactive CLI terminal to run **any** Git command, and includes a 1-click 3-Way Conflict Resolver.
 
-![Git Surgery 3D Simulator](https://img.shields.io/badge/Vibe_Code-Git_Surgery_3D-6366f1?style=for-the-badge)
-![HTML5 / Vanilla CSS / Modern JS](https://img.shields.io/badge/Stack-HTML5%20%7C%20Vanilla%20CSS%20%7C%20ES6-38bdf8?style=for-the-badge)
-![Zero Dependencies](https://img.shields.io/badge/Dependencies-Zero-10b981?style=for-the-badge)
-
----
-
-## ⚡ The Problem It Solves
-
-Merge conflicts, interactive rebases, detached HEADs, and squashing commits are among the most stress-inducing workflows for developers. One wrong `--force` or improper hard reset can wipe unpushed work.
-
-**Git Surgery 3D Simulator** eliminates the fear by giving developers a **tactile visual sandbox**:
-1. Visually stage and rehearse complex operations on a live **3D isometric DAG commit graph**.
-2. Resolve **3-way code collisions** interactively (`Accept Current`, `Accept Incoming`, or `Accept Both`).
-3. Reorder, squash, or drop commits in an **interactive rebase surgery rack**.
-4. Automatically generate verified, safe terminal command sequences with reflog safety nets.
+![Git Surgery Real-Time Dashboard](https://img.shields.io/badge/Status-Connected_to_Real_Git-10b981?style=for-the-badge)
+![Zero Dependencies](https://img.shields.io/badge/Python_3-Standard_Library_Only-38bdf8?style=for-the-badge)
+![Pure Vanilla Web Stack](https://img.shields.io/badge/Frontend-HTML5_%7C_Vanilla_CSS_%7C_ES6-6366f1?style=for-the-badge)
 
 ---
 
-## 🚀 Key Features
+## ⚡ What Makes It Real & Practical
 
-- **3D Isometric & 2D DAG Visualizer**:
-  - Live commit directed acyclic graph rendered with glowing neon nodes and cubic Bezier branch links.
-  - Interactive tilt angle slider and 3D depth toggles (`rotateX` / `rotateZ` isometric projection).
-  - Smooth mouse panning and wheel zooming.
-  - Live branch pointers (`main`, `feature/auth`, `HEAD`).
+Unlike passive simulators, **Git Surgery connects to your actual Git working tree on disk**:
 
-- **Interactive Rebase Surgery Tray (`git rebase -i`)**:
-  - Drag-and-drop commit staging cards to reorder history.
-  - Action selector dropdowns for each commit: `pick`, `reword`, `squash`, `fixup`, `drop`.
-  - Step-by-step playback simulation that dynamically recalculates DAG hashes and parent lineage.
+1. **Auto-Detects Local Projects**:
+   - The top navigation dropdown scans `d:\OLD_HP_PC_BACKUP\e\GIT_REPOS` and lets you switch between `DragShift`, `rea`, `superpowers`, `git-surgery-simulator`, or any other repository in 1 click.
+   - Shows active branch name (`master`, `feature/...`) and working tree status (`Clean`, `3 uncommitted`, `Conflict`).
 
-- **3-Way Conflict Surgery Module**:
-  - Live diff viewer displaying `<<<<<<< HEAD`, `=======`, and `>>>>>>> incoming`.
-  - 1-click surgical resolution buttons:
-    - **Accept Current (HEAD)**
-    - **Accept Incoming**
-    - **Accept Both (Hybrid Synthesis)**
-  - Instantly generates the clean merge commit with dual parent lines.
+2. **Interactive Git Command Console**:
+   - A real terminal CLI panel in the web interface.
+   - Run **any** command (`git status`, `git pull`, `git push`, `git branch -a`, `git stash`, `git checkout -b <name>`, `git diff`).
+   - Quick one-click command chips for rapid diagnosis.
+   - Auto-refreshes the visual commit graph whenever any command finishes.
 
-- **Reflog Time Machine & Cherry-Picker**:
-  - Inspect local reflog history entries (`HEAD@{n}`).
-  - 1-click rescue of orphaned commits after accidental `git reset --hard`.
-  - Pluck any individual commit node from one branch into another.
+3. **Live Commit Swimlanes**:
+   - Fetches actual commit history using `git log`.
+   - Displays author avatars, short hashes, relative timestamps (`5m ago`), and commit messages in clean, high-contrast cards.
+   - Click any commit card to run `git show <hash>` in the console.
 
-- **Safe Terminal Command Generator**:
-  - Every action continuously compiles the exact bash commands with risk ratings:
-    - `SAFE (Zero Risk)`
-    - `CAUTION (Force Push / History Rewrite)`
-  - Instant 1-click clipboard copy button.
+4. **Live 3-Way Merge Conflict Resolver**:
+   - When files in your repository have conflict markers (`<<<<<<< HEAD ... ======= ... >>>>>>>`):
+     - Displays the colliding code blocks side-by-side.
+     - Click **"Keep Your Version"**, **"Keep Incoming Version"**, or **"Merge Both"**.
+     - Writes the resolution directly to the file on disk and automatically runs `git add <file>`.
 
-- **Built-in Panic Missions**:
-  1. *Rebase Collision (Merge Conflict on Auth)*
-  2. *Emergency: Accidental Commit on Main*
-  3. *Surgery: Squash 4 Messy Commits for PR*
-  4. *Time Travel: Detached HEAD & Reflog Rescue*
-  5. *Freeform Sandbox: Custom DAG Experiment*
-
-- **Web Audio UI Synthesizer**:
-  - Procedural sound effects for node clicks, branch commits, conflict warnings, and resolution chords.
-  - Audio mute toggle in the top navigation bar.
+5. **Playground Mode Switcher**:
+   - Toggle between **Live Git** and **🎮 Playground** with built-in training missions (Merge Conflict, Accidental Main Commit, Squash 4 Commits, Reflog Rescue).
 
 ---
 
-## 🛠️ How to Run
+## 🚀 How to Run
 
-Zero build steps or npm installations needed!
+1. Open PowerShell or Terminal in the project directory:
+   ```powershell
+   cd d:\OLD_HP_PC_BACKUP\e\GIT_REPOS\git-surgery-simulator
+   python server.py
+   ```
 
-Simply open `index.html` in your browser:
+2. Open your browser to:
+   ```
+   http://localhost:4321
+   ```
 
-```bash
-# Option 1: Directly open in default browser on Windows
-start index.html
+*(Zero `npm install` or pip packages required — uses Python's standard library `http.server` & `subprocess`)*
 
-# Option 2: Run with any local static server (e.g. npx serve or python)
-npx -y serve .
-# or
-python -m http.server 8080
+---
+
+## 🌐 Deploy to Vercel (Zero-Install Web App)
+
+Git Surgery is fully configured to deploy as a static web app on Vercel with **zero server dependencies**:
+
+### Option 1: 1-Click via GitHub & Vercel Dashboard (Recommended)
+1. Push this repository to your GitHub account:
+   ```powershell
+   git remote add origin https://github.com/<your-username>/git-surgery.git
+   git branch -M main
+   git push -u origin main
+   ```
+2. Go to [vercel.com](https://vercel.com) and log in.
+3. Click **"Add New..."** → **"Project"** → **Import** your repository.
+4. Click **Deploy**. Vercel will build and serve it at `https://git-surgery.vercel.app` (or your custom domain) instantly!
+
+### Option 2: Deploy via Vercel CLI
+```powershell
+npx vercel
 ```
+Follow the short terminal prompts to link and deploy to your personal Vercel team.
+
+### How It Works on Vercel
+- **Zero Virus Risk / Zero Install**: Users simply open the link in any modern browser (Chrome, Edge, Brave, etc.).
+- **Client-Side File System Access API**: Users can click **"Browse Local Git Repo"** to open any local folder safely without uploading their private code to any server.
+- **Built-in Disaster Scenarios**: Visitors without local repos can immediately play with realistic simulated Git incidents (Accidental Main Commit, 3-Way Conflict, Stale Lock Files).
+- **Hybrid Bridge**: If the user runs `python server.py` locally, the Vercel app automatically detects it on `localhost:4321` and bridges into full real-time CLI mode!
 
 ---
 
-## 🎨 Design System
+## 📁 Project Architecture
 
-- **Obsidian Dark Palette**: `#07090e`, `#0d121c`, `#131b2a`
-- **Neon Glow Accents**:
-  - Cyan (`#38bdf8`)
-  - Indigo / Violet (`#6366f1`)
-  - Rose / Pink (`#f43f5e`)
-  - Emerald (`#10b981`)
-  - Amber (`#f59e0b`)
-- **Glassmorphism**: `backdrop-filter: blur(16px)` with subtle border highlights
-- **Typography**: Google Fonts Inter & JetBrains Mono
-- **Standards Compliance**: Native `<dialog closedby="any">` with backward compatibility fallback.
+- [vercel.json](file:///d:/OLD_HP_PC_BACKUP/e/GIT_REPOS/git-surgery-simulator/vercel.json) — Vercel routing, clean URLs & security headers
+- [package.json](file:///d:/OLD_HP_PC_BACKUP/e/GIT_REPOS/git-surgery-simulator/package.json) — NPM metadata and deploy scripts
+- [server.py](file:///d:/OLD_HP_PC_BACKUP/e/GIT_REPOS/git-surgery-simulator/server.py) — Optional lightweight local daemon bridge communicating with Git CLI
+- [index.html](file:///d:/OLD_HP_PC_BACKUP/e/GIT_REPOS/git-surgery-simulator/index.html) — Modern dashboard layout, project selector, commit swimlanes, terminal CLI
+- [index.css](file:///d:/OLD_HP_PC_BACKUP/e/GIT_REPOS/git-surgery-simulator/index.css) — Linear/Vercel-inspired SaaS dark design system & responsive layout
+- [app.js](file:///d:/OLD_HP_PC_BACKUP/e/GIT_REPOS/git-surgery-simulator/app.js) — Client API connector, Web File System API handler, terminal execution handler, live DAG graph renderer
+
