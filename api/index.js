@@ -193,10 +193,10 @@ module.exports = (req, res) => {
   const query = Object.fromEntries(url.searchParams.entries());
   const body = req.body || {};
 
-  const repoKey = query.path || body.repoPath || 'hypergit';
+  const repoKey = query.path || body.repoPath || body.path || 'hypergit';
   const repo = MOCK_REPOS[repoKey] || MOCK_REPOS['hypergit'];
 
-  // Route handlers
+  // ── /api/projects ──────────────────────────────────────────────────────────
   if (pathname === '/projects' || pathname === '') {
     return res.json(Object.values(MOCK_REPOS).map(r => ({
       name: r.name,
@@ -206,12 +206,13 @@ module.exports = (req, res) => {
       stagedCount: r.stagedCount,
       unstagedCount: r.unstagedCount,
       untrackedCount: r.untrackedCount,
-      ahead: r.ahead,
-      behind: r.behind,
+      ahead: r.ahead || 0,
+      behind: r.behind || 0,
       isDemo: true
     })));
   }
 
+  // ── /api/status ────────────────────────────────────────────────────────────
   if (pathname === '/status') {
     return res.json({
       branch: repo.branch,
@@ -230,44 +231,60 @@ module.exports = (req, res) => {
     });
   }
 
+  // ── /api/commits ───────────────────────────────────────────────────────────
   if (pathname === '/commits') {
     return res.json(repo.commits || []);
   }
 
+  // ── /api/branches — return flat array (client uses Array.isArray check) ────
   if (pathname === '/branches') {
-    return res.json({
-      current: repo.branch,
-      branches: repo.branches || []
-    });
+    return res.json(repo.branches || []);
   }
 
+  // ── /api/stashes ───────────────────────────────────────────────────────────
   if (pathname === '/stashes') {
-    return res.json(repo.stashes || []);
+    // Ensure every stash has a `summary` field (client falls back to msg/message)
+    return res.json((repo.stashes || []).map(s => ({
+      ...s,
+      summary: s.summary || s.msg || s.message || 'WIP stash'
+    })));
   }
 
+  // ── /api/reflog ────────────────────────────────────────────────────────────
   if (pathname === '/reflog') {
-    return res.json(repo.reflog || []);
+    // Ensure every entry has `ref` + `selector` so renderReflogList is safe
+    return res.json((repo.reflog || []).map(e => ({
+      ...e,
+      ref: e.ref || e.selector || 'HEAD',
+      selector: e.selector || e.ref || 'HEAD'
+    })));
   }
 
+  // ── /api/doctor ────────────────────────────────────────────────────────────
   if (pathname === '/doctor') {
     return res.json(repo.doctor || { score: 90, checks: [] });
   }
 
+  // ── /api/diff ──────────────────────────────────────────────────────────────
   if (pathname === '/diff') {
+    const file = query.file || 'src/ui/terminal.js';
+    if (repo.diffs && repo.diffs[file]) return res.json(repo.diffs[file]);
     return res.json({
-      path: query.file || 'src/ui/terminal.js',
-      diff: '--- a/src/ui/terminal.js\n+++ b/src/ui/terminal.js\n@@ -14,4 +14,6 @@\n export function renderPrompt() {\n-  return "$ ";\n+  const prefix = getActiveBranch();\n+  return `hypergit(${prefix}) $ `;\n }',
+      path: file,
+      diff: `--- a/${file}\n+++ b/${file}\n@@ -14,4 +14,6 @@\n export function renderPrompt() {\n-  return "$ ";\n+  const prefix = getActiveBranch();\n+  return \`hypergit(\${prefix}) $ \`;\n }`,
       lines: [
-        { type: 'hunk', content: '@@ -14,4 +14,6 @@' },
-        { type: 'normal', content: ' export function renderPrompt() {' },
-        { type: 'del', content: '-  return "$ ";', oldNo: 15 },
-        { type: 'add', content: '+  const prefix = getActiveBranch();', newNo: 15 },
-        { type: 'add', content: '+  return `hypergit(${prefix}) $ `;', newNo: 16 },
-        { type: 'normal', content: ' }' }
-      ]
+        { type: 'chunk', text: '@@ -14,4 +14,6 @@' },
+        { type: 'normal', text: ' export function renderPrompt() {' },
+        { type: 'del', text: '-  return "$ ";', oldLine: 15 },
+        { type: 'add', text: '+  const prefix = getActiveBranch();', newLine: 15 },
+        { type: 'add', text: '+  return `hypergit(${prefix}) $ `;', newLine: 16 },
+        { type: 'normal', text: ' }' }
+      ],
+      stats: { add: 2, del: 1 }
     });
   }
 
+  // ── /api/conflict ──────────────────────────────────────────────────────────
   if (pathname === '/conflict') {
     return res.json(repo.conflict || {
       filePath: 'src/auth/jwt_service.js',
@@ -276,60 +293,145 @@ module.exports = (req, res) => {
     });
   }
 
+  // ── /api/resolve ───────────────────────────────────────────────────────────
   if (pathname === '/resolve') {
     repo.conflictedFiles = [];
     repo.isClean = true;
     return res.json({ success: true, message: 'Conflict resolved cleanly.' });
   }
 
+  // ── /api/checkpoints — return flat array of tag name strings ───────────────
+  if (pathname === '/checkpoints') {
+    const tags = (repo.checkpoints || []).map(c => typeof c === 'string' ? c : (c.name || c.tag || 'checkpoint'));
+    return res.json(tags);
+  }
+
+  if (pathname === '/checkpoint') {
+    if (!repo.checkpoints) repo.checkpoints = [];
+    repo.checkpoints.push(body.name || ('checkpoint-' + Date.now()));
+    return res.json({ success: true, message: `Safety checkpoint "${body.name || 'checkpoint'}" created!` });
+  }
+
+  if (pathname === '/restore-checkpoint') {
+    return res.json({ success: true, message: 'Checkpoint restored successfully.' });
+  }
+
+  // ── /api/exec — return { success, stdout, stderr, exitCode } ───────────────
+  if (pathname === '/exec') {
+    const cmd = (body.command || '').trim();
+    let stdout = '';
+    if (cmd === 'git status' || cmd === 'status') {
+      stdout = `On branch ${repo.branch}\n`;
+      if ((repo.conflictedFiles || []).length > 0) {
+        stdout += `You have unmerged paths.\n  (fix conflicts and run "git commit")\n\nUnmerged paths:\n`;
+        (repo.conflictedFiles || []).forEach(f => { stdout += `\tboth modified:   ${f}\n`; });
+      }
+      if ((repo.stagedFiles || []).length > 0) {
+        stdout += `Changes to be committed:\n`;
+        (repo.stagedFiles || []).forEach(f => { stdout += `\tmodified:   ${f}\n`; });
+      }
+      if ((repo.unstagedFiles || []).length > 0) {
+        stdout += `Changes not staged for commit:\n`;
+        (repo.unstagedFiles || []).forEach(f => { stdout += `\tmodified:   ${f}\n`; });
+      }
+      if ((repo.untrackedFiles || []).length > 0) {
+        stdout += `Untracked files:\n`;
+        (repo.untrackedFiles || []).forEach(f => { stdout += `\t${f}\n`; });
+      }
+      if (repo.isClean) stdout += 'nothing to commit, working tree clean\n';
+    } else if (cmd === 'git log' || cmd.startsWith('git log')) {
+      stdout = (repo.commits || []).map(c => {
+        const branches = (c.branches || []).length > 0 ? ` (${c.branches.join(', ')})` : '';
+        return `* ${c.hash}${branches} ${c.msg} (${c.time}) <${c.author}>`;
+      }).join('\n');
+    } else if (cmd === 'git branch' || cmd === 'git branch -a' || cmd === 'git branch -v') {
+      stdout = (repo.branches || []).map(b => `${b.isCurrent ? '* ' : '  '}${b.name}`).join('\n');
+    } else if (cmd === 'git diff') {
+      stdout = `diff --git a/src/ui/terminal.js b/src/ui/terminal.js\nindex 3d2a4..8f1e9 100644\n--- a/src/ui/terminal.js\n+++ b/src/ui/terminal.js\n@@ -14,4 +14,6 @@ export function renderPrompt() {\n-  return "$ ";\n+  const prefix = getActiveBranch();\n+  return \`hypergit(\${prefix}) $ \`;\n }`;
+    } else if (cmd === 'git stash list') {
+      stdout = (repo.stashes || []).map(s => `${s.ref}: WIP on ${s.branch || repo.branch}: ${s.msg}`).join('\n');
+    } else if (cmd === 'git reflog') {
+      stdout = (repo.reflog || []).map(r => `${r.hash} ${r.selector || r.ref}: ${r.action}: ${r.message}`).join('\n');
+    } else if (cmd.startsWith('git checkout -b ')) {
+      const bName = cmd.replace('git checkout -b ', '').trim();
+      stdout = `Switched to a new branch '${bName}'`;
+    } else if (cmd.startsWith('git checkout ')) {
+      const bName = cmd.replace('git checkout ', '').trim();
+      stdout = `Switched to branch '${bName}'`;
+    } else if (cmd === 'git add .' || cmd === 'git add -A') {
+      stdout = '';
+    } else if (cmd.startsWith('git commit')) {
+      const m = cmd.match(/-m\s+"([^"]+)"/) || cmd.match(/-m\s+'([^']+)'/) || cmd.match(/-m\s+(\S+)/);
+      const msg = m ? m[1] : 'commit';
+      stdout = `[${repo.branch} ${repo.commits[0] ? repo.commits[0].hash : 'abc1234'}] ${msg}\n 1 file changed, 8 insertions(+)`;
+    } else if (cmd === 'git stash') {
+      stdout = `Saved working directory and index state WIP on ${repo.branch}`;
+    } else if (cmd === 'git stash pop') {
+      stdout = `On branch ${repo.branch}\nDropped stash@{0}`;
+    } else if (cmd === 'git pull' || cmd.startsWith('git pull')) {
+      stdout = 'Already up to date.';
+    } else if (cmd === 'git push' || cmd.startsWith('git push')) {
+      stdout = `Everything up-to-date on branch '${repo.branch}'.`;
+    } else if (cmd === 'git fetch' || cmd.startsWith('git fetch')) {
+      stdout = `Fetched references from origin.`;
+    } else {
+      stdout = `[HyperGit Cloud Engine]\n$ ${cmd}\nCommand executed on ${repo.name}.`;
+    }
+    return res.json({ success: true, stdout, stderr: '', exitCode: 0 });
+  }
+
+  // ── /api/analyze-intent ────────────────────────────────────────────────────
+  if (pathname === '/analyze-intent') {
+    const q = (body.query || query.query || '').toLowerCase();
+    let diagnosis = `Working on branch "${repo.branch}".`;
+    let recommendation = {
+      title: 'Repository Status Normal',
+      desc: 'No urgent repairs needed.',
+      command: 'git status',
+      buttonText: 'Check Status'
+    };
+    if ((repo.conflictedFiles || []).length > 0 || q.includes('conflict')) {
+      diagnosis = `Merge conflict detected in "${(repo.conflictedFiles || [])[0] || 'files'}".`;
+      recommendation = { title: 'Resolve Merge Collision', desc: 'Review colliding chunks.', command: 'hypergit:resolve_conflict', buttonText: 'Open 3-Way Conflict Resolver' };
+    } else if (q.includes('mistake') || q.includes('accident') || repo.branch === 'main') {
+      diagnosis = `Working directly on branch "${repo.branch}".`;
+      recommendation = { title: 'Create Feature Branch', desc: 'Isolate work on a new branch.', command: 'git checkout -b feature/work', buttonText: '🌿 Create Branch' };
+    } else if (repo.stagedCount > 0 || repo.unstagedCount > 0 || q.includes('commit') || q.includes('stage')) {
+      diagnosis = `You have ${repo.unstagedCount || 0} modified files.`;
+      recommendation = { title: 'Stage and Commit', desc: 'Stage all and snapshot.', command: 'git add . && git commit -m "update"', buttonText: 'Stage & Commit All' };
+    }
+    return res.json({ query: body.query || '', diagnosis, status: { branch: repo.branch, isClean: repo.isClean }, recommendation, alternatives: [] });
+  }
+
+  // ── /api/git-sync ──────────────────────────────────────────────────────────
+  if (pathname === '/git-sync') {
+    const action = body.action || 'fetch';
+    return res.json({ success: true, stdout: `git ${action} completed on ${repo.name}.`, stderr: '' });
+  }
+
+  // ── /api/explore-dir ───────────────────────────────────────────────────────
   if (pathname === '/explore-dir') {
     const list = Object.values(MOCK_REPOS).map(r => ({
-      name: r.name,
-      path: r.path,
-      isGit: true,
-      branches: r.branches.map(b => b.name),
-      activeBranch: r.branch
+      name: r.name, path: r.path, isGit: true,
+      branches: r.branches.map(b => b.name), activeBranch: r.branch
     }));
-    return res.json({
-      currentPath: 'HyperGit Cloud Workspaces',
-      parentPath: null,
-      entries: list,
-      folders: list
-    });
+    return res.json({ currentPath: 'HyperGit Cloud Workspaces', parentPath: null, entries: list, folders: list });
   }
 
   if (pathname === '/browse-folder') {
-    return res.json({
-      selected: true,
-      path: 'hypergit',
-      name: '⚡ HyperGit Core Engine',
-      isGit: true
-    });
+    return res.json({ selected: true, path: 'hypergit', name: '⚡ HyperGit Core Engine', isGit: true });
   }
 
   if (pathname === '/open-path') {
-    return res.json({
-      success: true,
-      path: body.path || 'hypergit',
-      name: '⚡ HyperGit Core Engine'
-    });
+    return res.json({ success: true, path: body.path || 'hypergit', name: '⚡ HyperGit Core Engine' });
   }
 
-  if (pathname === '/exec') {
-    const cmd = (body.command || 'git status').trim();
-    return res.json({
-      exitCode: 0,
-      output: `[HyperGit Cloud Engine]\n$ ${cmd}\nCommand executed successfully on ${repo.name}.`,
-      status: 'success'
-    });
-  }
-
-  if (pathname === '/squash' || pathname === '/undo' || pathname === '/move-branch' || pathname === '/doctor-repair' || pathname === '/file-action' || pathname === '/commit-action' || pathname === '/branch-action' || pathname === '/stash-action' || pathname === '/git-sync') {
-    return res.json({
-      success: true,
-      message: `Action '${pathname}' applied successfully on ${repo.name}.`
-    });
+  // ── /api/* action endpoints (squash, undo, move-branch, etc.) ──────────────
+  if (['/squash', '/undo', '/move-branch', '/doctor-repair', '/file-action',
+       '/commit-action', '/branch-action', '/stash-action'].includes(pathname)) {
+    return res.json({ success: true, stdout: `Action '${pathname.slice(1)}' applied on ${repo.name}.`, message: `Action '${pathname.slice(1)}' completed.` });
   }
 
   return res.json({ success: true, message: 'HyperGit API online.' });
 };
+

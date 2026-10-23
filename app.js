@@ -1683,7 +1683,7 @@ window.fetch = async function(resource, init) {
       (isBrowserRepo && !repoPathInCall && url.includes('browser%3A%2F%2F')) ||
       (!repoPathInCall && isBrowserRepo && !isLocalHost && !API_BASE);
     
-    if (!isBrowserTarget && (isLocalHost || API_BASE || url.startsWith('http'))) {
+    if (!isBrowserTarget) {
       try {
         const res = await _originalFetch(targetUrl, init);
         if (res.ok) return res;
@@ -4692,12 +4692,16 @@ class RealGitApp {
       });
 
       const data = await res.json();
-      if (data.success) {
+      const isSuccess = data.success !== undefined ? Boolean(data.success) : (data.exitCode === 0 || data.status === 'success');
+      const stdout = data.stdout !== undefined ? data.stdout : (data.output || '');
+      const stderr = data.stderr !== undefined ? data.stderr : (data.error || '');
+
+      if (isSuccess) {
         sfx.commit();
-        this.appendTerminalOutput(command, data.stdout || '(command finished with zero output)', 'stdout');
+        this.appendTerminalOutput(command, stdout || '(command finished with zero output)', 'stdout');
       } else {
         sfx.error();
-        this.appendTerminalOutput(command, data.stderr || data.stdout || 'Command exited with error.', 'stderr');
+        this.appendTerminalOutput(command, stderr || stdout || 'Command exited with error.', 'stderr');
       }
 
       this.refreshActiveRepo();
