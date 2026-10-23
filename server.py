@@ -1245,6 +1245,20 @@ class GitSurgeryRequestHandler(SimpleHTTPRequestHandler):
             body = {}
 
         repo_path = body.get('repoPath', CURRENT_DIR)
+        if repo_path and isinstance(repo_path, str) and repo_path.startswith('browser://'):
+            folder_name = repo_path.replace('browser://', '').strip('/')
+            resolved = None
+            if os.path.basename(CURRENT_DIR).lower() == folder_name.lower():
+                resolved = CURRENT_DIR
+            else:
+                for p in find_git_projects():
+                    if os.path.basename(p['path']).lower() == folder_name.lower():
+                        resolved = p['path']
+                        break
+            if resolved:
+                repo_path = resolved
+            else:
+                repo_path = CURRENT_DIR
 
         # Open custom path directly
         if parsed.path == '/api/open-path':
@@ -1353,11 +1367,19 @@ class GitSurgeryRequestHandler(SimpleHTTPRequestHandler):
             action = body.get('action', 'fetch')
             if action == 'pull':
                 res = run_git_cmd(repo_path, ['pull'])
+                if not res.get('stdout') and res.get('stderr'):
+                    res['stdout'] = res['stderr']
             elif action == 'push':
                 branch = body.get('branch', 'HEAD')
                 res = run_git_cmd(repo_path, ['push', 'origin', branch])
+                if not res.get('stdout') and res.get('stderr'):
+                    res['stdout'] = res['stderr']
             else: # fetch
-                res = run_git_cmd(repo_path, ['fetch', '--all'])
+                res = run_git_cmd(repo_path, ['fetch', '--all', '--verbose'])
+                if not res.get('stdout') and res.get('stderr'):
+                    res['stdout'] = res['stderr']
+                if not res.get('stdout'):
+                    res['stdout'] = 'Fetched references from origin. Remote tracking branches updated.'
             self.send_json_response(res)
             return
 

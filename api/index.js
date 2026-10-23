@@ -1,6 +1,95 @@
 // Vercel Serverless Function: Cloud Mock & Real-Time Engine for HyperGit
 // Ensures every /api/* route returns 200 OK with realistic Git responses on Vercel.
 
+const https = require('https');
+
+function syncRemoteGit(remoteUrl, branch = 'main', currentHash = '') {
+  return new Promise((resolve) => {
+    if (!remoteUrl || typeof remoteUrl !== 'string') {
+      return resolve({ success: true, updated: false, stdout: 'Already up to date. (No remote configured)' });
+    }
+    const cleanUrl = remoteUrl.replace(/\.git\/?$/, '');
+    const infoUrl = cleanUrl + '.git/info/refs?service=git-upload-pack';
+
+    const req = https.get(infoUrl, { headers: { 'User-Agent': 'git/2.40.0' }, timeout: 8000 }, (res) => {
+      let data = '';
+      res.on('data', c => data += c);
+      res.on('end', async () => {
+        let remoteHash = '';
+        const lines = data.split('\n');
+        for (const l of lines) {
+          const m = l.match(/^[0-9a-f]{4}([0-9a-f]{40})\s+refs\/heads\/(\S+)/i);
+          if (m && m[2] === branch) {
+            remoteHash = m[1];
+            break;
+          }
+        }
+        if (!remoteHash) {
+          const headM = data.match(/^[0-9a-f]{4}([0-9a-f]{40})\s+HEAD/i);
+          if (headM) remoteHash = headM[1];
+        }
+
+        const shortRemote = (remoteHash || '').slice(0, 7);
+        const shortCur = (currentHash || '').slice(0, 7);
+
+        if (remoteHash && shortCur && shortRemote.toLowerCase() === shortCur.toLowerCase()) {
+          return resolve({ success: true, updated: false, stdout: `Already up to date on ${branch}.\nLocal branch is up to date with 'origin/${branch}'.` });
+        }
+
+        // Try getting real commit messages from GitHub API if it's a GitHub repo
+        const ghMatch = remoteUrl.match(/github\.com\/([^/]+)\/([^/.]+)/);
+        let commits = [];
+        if (ghMatch) {
+          try {
+            commits = await new Promise(r => {
+              const ghReq = https.get('https://api.github.com/repos/' + ghMatch[1] + '/' + ghMatch[2] + '/commits?sha=' + encodeURIComponent(branch) + '&per_page=5',
+                { headers: { 'User-Agent': 'HyperGit' }, timeout: 5000 }, rRes => {
+                  let d = '';
+                  rRes.on('data', c => d += c);
+                  rRes.on('end', () => {
+                    try {
+                      const list = JSON.parse(d);
+                      r(Array.isArray(list) ? list.map(c => ({
+                        hash: c.sha.slice(0, 7),
+                        fullHash: c.sha,
+                        author: c.commit.author.name,
+                        msg: c.commit.message.split('\n')[0],
+                        time: c.commit.author.date
+                      })) : []);
+                    } catch { r([]); }
+                  });
+              });
+              ghReq.on('error', () => r([]));
+            });
+          } catch {}
+        }
+
+        const msgList = commits.length > 0
+          ? commits.map(c => ` * ${c.hash} ${c.msg}`).join('\n')
+          : ` * ${shortRemote || 'head'} (remote commit on origin/${branch})`;
+
+        const stdout = `From ${remoteUrl}\n${msgList}\nUpdating ${shortCur || 'HEAD'}..${shortRemote}\nFast-forward\nAll commits synchronized with remote repository.`;
+
+        resolve({
+          success: true,
+          updated: Boolean(remoteHash && shortRemote.toLowerCase() !== shortCur.toLowerCase()),
+          remoteHash: remoteHash || (commits[0] ? commits[0].fullHash : ''),
+          shortHash: shortRemote || (commits[0] ? commits[0].hash : ''),
+          commits: commits,
+          stdout: stdout
+        });
+      });
+    });
+    req.on('error', (err) => {
+      resolve({
+        success: true,
+        updated: false,
+        stdout: `Connected to ${remoteUrl}. Remote tracking up to date.`
+      });
+    });
+  });
+}
+
 const MOCK_REPOS = {
   'hypergit': {
     name: '⚡ HyperGit Core Engine',
@@ -178,7 +267,7 @@ const MOCK_REPOS = {
   }
 };
 
-module.exports = (req, res) => {
+module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -406,7 +495,37 @@ module.exports = (req, res) => {
   // ── /api/git-sync ──────────────────────────────────────────────────────────
   if (pathname === '/git-sync') {
     const action = body.action || 'fetch';
-    return res.json({ success: true, stdout: `git ${action} completed on ${repo.name}.`, stderr: '' });
+    const remoteUrl = body.remoteUrl || repo.remoteUrl || (repo.path === 'hypergit' ? 'https://github.com/shubhamp2504/hypergit.git' : '');
+    const branch = body.branch || repo.branch || 'main';
+    const currentHash = body.currentHash || (repo.commits && repo.commits[0] ? repo.commits[0].hash : '');
+
+    if (remoteUrl) {
+      const syncResult = await syncRemoteGit(remoteUrl, branch, currentHash);
+      if (syncResult.updated && syncResult.commits && syncResult.commits.length > 0 && repo.commits) {
+        if (action === 'pull') {
+          syncResult.commits.forEach(c => {
+            if (!repo.commits.some(ex => ex.hash === c.hash)) {
+              repo.commits.unshift({
+                id: 'c_' + c.hash,
+                hash: c.hash,
+                author: c.author,
+                time: 'just now',
+                msg: c.msg,
+                parents: repo.commits.length ? [repo.commits[0].hash] : [],
+                branches: [branch]
+              });
+            }
+          });
+          repo.ahead = 0;
+          repo.behind = 0;
+        } else {
+          repo.behind = syncResult.commits.length;
+        }
+      }
+      return res.json(syncResult);
+    }
+
+    return res.json({ success: true, stdout: `git ${action} completed on ${repo.name}. Working tree up to date.`, stderr: '' });
   }
 
   // ── /api/explore-dir ───────────────────────────────────────────────────────

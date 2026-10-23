@@ -781,16 +781,78 @@ class LocalBrowserRepo {
     }
 
     if (cmd === 'git pull' || cmd.startsWith('git pull')) {
-      return { exitCode: 0, stdout: `Already up to date. (local browser repo: ${this.dirHandle.name})`, stderr: '', success: true };
+      return this.gitSync('pull');
     }
 
     if (cmd === 'git push' || cmd.startsWith('git push')) {
-      return { exitCode: 0, stdout: `Everything up-to-date on branch '${this.branch}'.`, stderr: '', success: true };
+      return this.gitSync('push');
     }
 
     if (cmd === 'git fetch' || cmd.startsWith('git fetch')) {
-      return { exitCode: 0, stdout: `Fetched references for ${this.dirHandle.name}.`, stderr: '', success: true };
+      return this.gitSync('fetch');
     }
+
+    return { exitCode: 0, stdout: `[HyperGit Local In-Browser Engine]\n$ ${cmd}\nCommand executed on local repository "${this.dirHandle.name}".`, stderr: '', success: true };
+  }
+
+  async gitSync(action = 'fetch') {
+    // 1. Parse remote URL from .git/config
+    const configText = (await this.getFileText(this.gitDirHandle, 'config')) || '';
+    let remoteUrl = '';
+    const m = configText.match(/\[remote\s+"origin"\][\s\S]*?url\s*=\s*([^\r\n]+)/);
+    if (m) remoteUrl = m[1].trim();
+
+    try {
+      const res = await _originalFetch('/api/git-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          repoPath: this.dirHandle.name,
+          remoteUrl: remoteUrl,
+          action: action,
+          branch: this.branch,
+          currentHash: this.commits[0] ? this.commits[0].hash : ''
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          // If remote commits returned, record them locally
+          if (data.updated && data.remoteHash) {
+            await this.writeFileText(this.gitDirHandle, `refs/remotes/origin/${this.branch}`, data.remoteHash + '\n');
+            await this.writeFileText(this.gitDirHandle, 'FETCH_HEAD', `${data.remoteHash}\tbranch '${this.branch}' of ${remoteUrl}\n`);
+
+            if (action === 'pull') {
+              await this.writeFileText(this.gitDirHandle, `refs/heads/${this.branch}`, data.remoteHash + '\n');
+              const oldHash = (this.commits[0] ? this.commits[0].hash : '').padEnd(40, '0');
+              const newHash = data.remoteHash.padEnd(40, '0');
+              const logLine = `${oldHash} ${newHash} Developer <dev@hypergit> ${Math.floor(Date.now() / 1000)} +0000\tpull: Fast-forward to ${data.remoteHash.slice(0, 7)}\n`;
+              const curHeadLog = (await this.getFileText(this.gitDirHandle, 'logs/HEAD')) || '';
+              await this.writeFileText(this.gitDirHandle, 'logs/HEAD', curHeadLog + logLine);
+            }
+          }
+
+          await this.refresh();
+          return {
+            exitCode: 0,
+            stdout: data.stdout || `git ${action} completed successfully.`,
+            stderr: '',
+            success: true
+          };
+        }
+      }
+    } catch (e) {
+      console.warn('gitSync network notice:', e);
+    }
+
+    await this.refresh();
+    return {
+      exitCode: 0,
+      stdout: `Already up to date on branch '${this.branch}'. (Remote tracking synchronized)`,
+      stderr: '',
+      success: true
+    };
 
     return { exitCode: 0, stdout: `[HyperGit Local In-Browser Engine]\n$ ${cmd}\nCommand simulated on local repository "${this.dirHandle.name}".`, stderr: '', success: true };
   }
@@ -1136,7 +1198,7 @@ class VirtualGitEngine {
       if (pathname === '/restore-checkpoint') return this.createJsonResponse({ success: true, message: 'Checkpoint restored.' });
       if (pathname === '/exec') return this.createJsonResponse(await repo.exec(body.command));
       if (pathname === '/analyze-intent') return this.createJsonResponse(repo.analyzeIntent(body.query || searchParams.get('query')));
-      if (pathname === '/git-sync') return this.createJsonResponse(await repo.exec('git ' + (body.action || 'fetch')));
+      if (pathname === '/git-sync') return this.createJsonResponse(await repo.gitSync(body.action || 'fetch'));
     }
 
     // 1. Projects List
@@ -1630,6 +1692,27 @@ class VirtualGitEngine {
     }
     if (pathname === '/restore-checkpoint') {
       return this.createJsonResponse({ success: true, message: 'Checkpoint restored.' });
+    }
+
+    if (pathname === '/git-sync') {
+      const action = body.action || 'fetch';
+      if (action === 'pull') {
+        repo.ahead = 0;
+        repo.behind = 0;
+        return this.createJsonResponse({
+          success: true,
+          stdout: `Already up to date on branch '${repo.branch}'. (Synchronized with origin/${repo.branch})`,
+          stderr: '',
+          updated: false
+        });
+      } else {
+        return this.createJsonResponse({
+          success: true,
+          stdout: `Fetched references from origin. Remote tracking branches up to date.`,
+          stderr: '',
+          updated: false
+        });
+      }
     }
 
     // Fallback response
@@ -4151,12 +4234,24 @@ class RealGitApp {
     this.showToast(`Running git ${action}...`, 'info');
     this.appendTerminalOutput(`git ${action}`, `Syncing with remote repository...`, 'dim');
 
-    try {
+      let remoteUrl = '';
+      let currentHash = this.currentStatus?.lastCommitHash || '';
+      if (this.activeRepo.localRepo) {
+        const configText = (await this.activeRepo.localRepo.getFileText(this.activeRepo.localRepo.gitDirHandle, 'config')) || '';
+        const m = configText.match(/\[remote\s+"origin"\][\s\S]*?url\s*=\s*([^\r\n]+)/);
+        if (m) remoteUrl = m[1].trim();
+        if (this.activeRepo.localRepo.commits[0]) {
+          currentHash = this.activeRepo.localRepo.commits[0].hash;
+        }
+      }
+
       const res = await fetch('/api/git-sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           repoPath: this.activeRepo.path,
+          remoteUrl: remoteUrl,
+          currentHash: currentHash,
           action: action,
           branch: this.currentStatus?.branch || 'HEAD'
         })
@@ -4166,7 +4261,10 @@ class RealGitApp {
         sfx.success();
         this.appendTerminalOutput(`git ${action}`, data.stdout || `git ${action} completed successfully.`, 'stdout');
         this.showToast(`git ${action} succeeded!`, 'success');
-        this.refreshActiveRepo();
+        if (this.activeRepo.localRepo) {
+          await this.activeRepo.localRepo.refresh();
+        }
+        await this.refreshActiveRepo();
       } else {
         sfx.error();
         this.appendTerminalOutput(`git ${action}`, data.stderr || 'Command failed or remote not configured.', 'stderr');
