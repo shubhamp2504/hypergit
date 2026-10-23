@@ -3,9 +3,6 @@
   "name": "hypergit",
   "cleanUrls": true,
   "trailingSlash": false,
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/index.js" }
-  ],
   "headers": [
     {
       "source": "/(.*)",
