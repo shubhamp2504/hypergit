@@ -1610,18 +1610,22 @@ class VirtualGitEngine {
 
       return this.createJsonResponse({
         exitCode: 0,
+        stdout: output,
+        stderr: '',
         output: output,
+        success: true,
         status: 'success'
       });
     }
 
     // 21. Checkpoints
     if (pathname === '/checkpoints') {
-      return this.createJsonResponse({ checkpoints: repo.checkpoints || [] });
+      const tags = (repo.checkpoints || []).map(c => typeof c === 'string' ? c : (c.name || c.tag || 'checkpoint'));
+      return this.createJsonResponse(tags);
     }
     if (pathname === '/checkpoint') {
       if (!repo.checkpoints) repo.checkpoints = [];
-      repo.checkpoints.push({ tag: 'chk_' + Date.now(), name: body.name || 'Safety Checkpoint', time: 'just now' });
+      repo.checkpoints.push(body.name || 'checkpoint-' + Date.now());
       return this.createJsonResponse({ success: true, message: 'Checkpoint created.' });
     }
     if (pathname === '/restore-checkpoint') {
@@ -1661,10 +1665,23 @@ window.fetch = async function(resource, init) {
       targetUrl = API_BASE + url;
     }
     
-    // Check if target is a browser repo
-    const isBrowserTarget = (typeof url === 'string' && url.includes('browser%3A%2F%2F')) || 
-      (typeof init?.body === 'string' && init.body.includes('browser://')) ||
-      (LocalBrowserGitEngine.activeRepo && !url.includes('path=') && (!init?.body || !init.body.includes('repoPath')));
+    // Only route to LocalBrowserRepo when the ACTIVE repo is explicitly a browser folder.
+    // Parse repoPath / path from the request to check if it's a browser:// target.
+    let bodyObj = {};
+    if (init && typeof init.body === 'string') {
+      try { bodyObj = JSON.parse(init.body); } catch {}
+    }
+    const pathParam = (() => {
+      try { return new URL(url, 'http://localhost').searchParams.get('path') || ''; } catch { return ''; }
+    })();
+    const repoPathInCall = bodyObj.repoPath || bodyObj.path || pathParam || '';
+    
+    // A call is a browser-repo target only when the repo path in the call is a browser:// path
+    // OR when no path is specified at all and the active repo is a local browser folder.
+    const isBrowserRepo = LocalBrowserGitEngine.activeRepo !== null;
+    const isBrowserTarget = repoPathInCall.startsWith('browser://') ||
+      (isBrowserRepo && !repoPathInCall && url.includes('browser%3A%2F%2F')) ||
+      (!repoPathInCall && isBrowserRepo && !isLocalHost && !API_BASE);
     
     if (!isBrowserTarget && (isLocalHost || API_BASE || url.startsWith('http'))) {
       try {
