@@ -187,7 +187,8 @@ module.exports = (req, res) => {
     return res.status(200).end();
   }
 
-  const url = new URL(req.url, `https://${req.headers.host || 'hypergit.vercel.app'}`);
+  const host = (req.headers && req.headers.host) ? req.headers.host : 'hypergit.vercel.app';
+  const url = new URL(req.url, `https://${host}`);
   const pathname = url.pathname.replace(/^\/api/, '');
   const query = Object.fromEntries(url.searchParams.entries());
   const body = req.body || {};
